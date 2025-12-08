@@ -1,0 +1,70 @@
+# 📘 *prop-logic-trainer*
+
+Das Ziel dieser Arbeit ist die Konzeption und Umsetzung einer **digitalen Übungsplattform**, die Studierende beim Erlernen des logischen Schließens im Bereich der Aussagenlogik unterstützt. Die Anwendung soll automatisiert Aufgaben generieren, diese auswerten und auf Basis des individuellen Lernverhaltens den Schwierigkeitsgrad adaptiv anpassen. 
+Darüber hinaus soll der Lernfortschritt sichtbar gemacht und ein motivierendes Lernumfeld geschaffen werden, das eigenständiges Üben fördert.
+
+
+---
+
+## Ordnerstruktur
+
+```
+prop-logic-trainer/
+│
+├── backend/                           # Backend-Server (API, Logik, DB-Anbindung)
+│   ├── app/                           # Hauptanwendungscode des Backends
+│   │   ├── api/                       # REST-/GraphQL-Endpunkte
+│   │   │   └── ...                    # Routen wie /solve, /tasks, /submit
+│   │   ├── core/                      # Zentrale Konfiguration (DB, ENV, Logging)
+│   │   │   ├── config.py              # Lädt Einstellungen (z.B. aus .env)
+│   │   │   ├── database.py            # Erstellt DB-Verbindung
+│   │   │   └── logging.py             # Logging-Konfiguration
+│   │   ├── logic_engine/              # Kernlogik zur Formelverarbeitung
+│   │   │   ├── parser/                # Zerlegt Formeln in Syntaxbäume
+│   │   │   ├── evaluator/             # Berechnet Wahrheitswerte & Modelle
+│   │   │   └── inference/             # Prüft logische Ableitbarkeit
+│   │   ├── task_generator/            # Generiert Übungsaufgaben
+│   │   ├── user_model/                # Speichert Nutzerfortschritt (Basis für Adaptivität)
+│   │   └── utils/                     # Hilfsfunktionen (Formatierung, Tools)
+│   ├── tests/                         # Unit-Tests für Backend-Module
+│   └── requirements.txt               # Python-Abhängigkeiten
+│
+├── frontend/                          # Clientseitige Webanwendung (React/TS)
+│   ├── public/                        # Statische Dateien (Favicon, Logos, manifest)
+│   ├── src/                           # Frontend-Quellcode
+│   │   ├── components/                # Wiederverwendbare UI-Komponenten
+│   │   ├── pages/                     # Ansichten/Seiten (Home, Tasks, Results)
+│   │   ├── logic_visualizer/          # Visualisierung von Ableitungen & Formeln
+│   │   ├── services/                  # API-Kommunikation (taskService, evaluationService)
+│   │   └── assets/                    # Bilder, Icons, Logos, die im Code importiert werden
+│   └── package.json                   # Abhängigkeiten & Build-Skripte des Frontends
+│
+├── docs/                              # Dokumentation & Forschungsunterlagen
+│   ├── research/                      # Forschung & theoretische Grundlagen
+│   │   └── papers/                    # Relevante wissenschaftliche Publikationen
+│   ├── thesis/                        # BA-Notizen, Grafiken, Exposé, Inhalte
+│   ├── architecture/                  # Systemdiagramme & Designentscheidungen
+│   └── specifications/                # API-, Parser- & Datenformatspezifikationen
+│
+├── examples/                          # Beispieldaten & Musteraufgaben
+│   ├── sample_tasks/                  # Beispielaufgaben für Tests & Demos
+│   ├── solution_walkthroughs/         # Beispiel-Lösungswege für Dokumentation/Test
+│   └── validation_sets/               # Formeln zur Validierung des Parsers
+│
+├── scripts/                           # Automatisierungs- & Setup-Skripte
+│   ├── dev_setup.sh                   # Entwicklerumgebung automatisch aufsetzen
+│   └── data_scripts/                  # Datenimport/-export, Konvertierung
+│
+├── .gitignore                         # Dateien/Ordner, die Git ignoriert
+├── README.md                          # Projektbeschreibung (diese Datei)
+└── LICENSE                            # Lizenz des Projekts (optional)
+```
+
+---
+
+
+## Projekt-Setup
+
+### Virtuelle Umgebung
+
+Führe **./setup.sh** aus, um eine virtuelle Umgebung mit allen Abhängigkeiten aus **requirements.txt** zu erstellen.
