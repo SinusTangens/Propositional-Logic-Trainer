@@ -17,6 +17,7 @@ from sympy.logic.boolalg import (
     Implies,
     Xor,
     Equivalent,
+    to_cnf
 )
 
 
@@ -86,25 +87,25 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
     (TaskType.CASE_SPLIT, 1): DifficultySpec(
         num_vars_range=(3, 3), # Klein anfangen
         num_premises_range=(3, 3), # Etwas mehr Prämissen nötig für Widersprüche
-        max_depth=2,
-        allowed_ops=["not", "or", "imp", "xor"], # And reduzieren, da es oft direkt auflöst
+        max_depth=1,
+        allowed_ops=["not", "or", "imp", "xor", "equiv"], # And reduzieren, da es oft direkt auflöst
         op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "and": 1.0, "equiv": 1.0},
         closure_threshold_func=None, 
     ),
     (TaskType.CASE_SPLIT, 2): DifficultySpec(
-        num_vars_range=(3, 4),
-        num_premises_range=(3, 5),
+        num_vars_range=(4, 4),
+        num_premises_range=(4, 5),
         max_depth=2,
         allowed_ops=["not", "and", "or", "imp", "xor", "equiv"],
-        op_weights={"not": 1.0, "or": 1.2, "imp": 1.2, "xor": 1.0, "and": 0.5, "equiv": 0.8},
+        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "and": 1.0, "equiv": 0.8},
         closure_threshold_func=None,
     ),
     (TaskType.CASE_SPLIT, 3): DifficultySpec(
         num_vars_range=(5, 5),
         num_premises_range=(6, 6),
-        max_depth=3,
+        max_depth=2,
         allowed_ops=["not", "and", "or", "imp", "xor", "equiv"],
-        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "and": 0.5, "equiv": 1.0},
+        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "and": 1.0, "equiv": 1.0},
         closure_threshold_func=None,
     ),
 }
@@ -232,22 +233,106 @@ def _premises_connectivity_summary(premises: List[Boolean], used_vars) -> Tuple[
     return (len(visited) == n), direct_entail, any_edge
 
 
-def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol]) -> Dict[Symbol, bool]:
-    known: Dict[Symbol, bool] = {}
-    def known_as_formulas() -> List[Boolean]:
-        return [s if val else Not(s) for s, val in known.items()]
 
+def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol]) -> Dict[Symbol, bool]:
+    """
+    Simuliert 'einfaches' logisches Schließen mittels Unit Propagation.
+    Findet nur Variablen, die durch direkte Kettenreaktion (ohne Fallunterscheidung/Raten)
+    bestimmt werden können.
+    """
+    # 1. Alles in CNF (Konjunktive Normalform) wandeln
+    # Das zerlegt Formeln in eine Liste von Klauseln, die alle WAHR sein müssen.
+    # z.B. (A -> B) wird zu (Not(A) or B)
+    cnf_clauses = []
+    for p in premises:
+        cnf = to_cnf(p, simplify=True)
+        if isinstance(cnf, And):
+            cnf_clauses.extend(cnf.args)
+        else:
+            cnf_clauses.append(cnf)
+
+    known: Dict[Symbol, bool] = {}
+    
     changed = True
     while changed:
         changed = False
-        for v in vars_seq:
-            if v in known: continue
-            current_premises = list(premises) + known_as_formulas()
-            if entails(current_premises, v, list(vars_seq)):
-                known[v] = True; changed = True; continue
-            if entails(current_premises, Not(v), list(vars_seq)):
-                known[v] = False; changed = True; continue
+        new_clauses = []
+        
+        for clause in cnf_clauses:
+            # Wir bereinigen die Klausel basierend auf dem, was wir schon wissen
+            
+            # Zerlege Klausel in Literale (Disjunktion)
+            lits = list(clause.args) if isinstance(clause, Or) else [clause]
+            
+            # Filtere Literale
+            active_lits = []
+            clause_satisfied = False
+            
+            for lit in lits:
+                # Literal analysieren (Symbol oder Not(Symbol))
+                if isinstance(lit, Not):
+                    sym, is_neg = lit.args[0], True
+                else:
+                    sym, is_neg = lit, False
+                
+                # Wenn wir das Symbol schon kennen:
+                if sym in known:
+                    val = known[sym]
+                    # Wenn Literal wahr ist (z.B. A ist True und wir haben A): Klausel erledigt
+                    if (val and not is_neg) or (not val and is_neg):
+                        clause_satisfied = True
+                        break
+                    # Wenn Literal falsch ist (z.B. A ist False und wir haben A): Literal fällt weg
+                    # (Wir fügen es nicht zu active_lits hinzu)
+                else:
+                    active_lits.append(lit)
+            
+            if clause_satisfied:
+                continue
+                
+            # --- UNIT PROPAGATION ---
+            # Wenn nur noch 1 Literal übrig ist, MUSS dieses wahr sein
+            if len(active_lits) == 0:
+                # Widerspruch (leere Klausel) - sollte bei validen Aufgaben nicht passieren,
+                # aber wir brechen hier ab, da wir nur "sicheres Wissen" wollen.
+                return known 
+                
+            if len(active_lits) == 1:
+                # Bingo! Wir haben eine neue direkte Folgerung
+                unit = active_lits[0]
+                if isinstance(unit, Not):
+                    s, v = unit.args[0], False
+                else:
+                    s, v = unit, True
+                
+                if s not in known:
+                    known[s] = v
+                    changed = True
+            else:
+                # Klausel ist noch nicht gelöst, kommt in die nächste Runde
+                # Rekonstruiere Or für den nächsten Durchlauf
+                new_clauses.append(Or(*active_lits))
+        
+        cnf_clauses = new_clauses
+
     return known
+
+# def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol]) -> Dict[Symbol, bool]:
+#     known: Dict[Symbol, bool] = {}
+#     def known_as_formulas() -> List[Boolean]:
+#         return [s if val else Not(s) for s, val in known.items()]
+
+#     changed = True
+#     while changed:
+#         changed = False
+#         for v in vars_seq:
+#             if v in known: continue
+#             current_premises = list(premises) + known_as_formulas()
+#             if entails(current_premises, v, list(vars_seq)):
+#                 known[v] = True; changed = True; continue
+#             if entails(current_premises, Not(v), list(vars_seq)):
+#                 known[v] = False; changed = True; continue
+#     return known
 
 
 # ---------------------------------------------------------------------------
@@ -328,7 +413,9 @@ def is_good_task_type_case_split(premises: List[Boolean], vars, level) -> bool:
             return False
     
     all_syms = set()
-    for prem in premises: all_syms |= prem.free_symbols
+    for prem in premises: 
+        all_syms |= prem.free_symbols
+
     used_vars = [v for v in vars if v in all_syms]
     
     # Alle Variablen müssen verwendet werden
@@ -445,28 +532,52 @@ class TaskGenerator:
 if __name__ == "__main__":
     generator = TaskGenerator(DIFFICULTY_CONFIG)
 
-    try:
-        print("--- Generiere CASE_SPLIT (Level 1) ---")
-        # Hinweis: Case Split dauert evtl. länger zu generieren, da die Bedingungen sehr spezifisch sind (0 Closure aber 1 Modell)
-        task_cs = generator.generate_task(TaskType.CASE_SPLIT, 3)
-        
-        print(f"Typ {task_cs.task_type} – Level {task_cs.level}")
-        print("Variablen:", task_cs.variables)
-        print("Prämissen:")
-        for i, p in enumerate(task_cs.premises, 1):
-            print(f"(P{i}) {print_logical_pretty(p)}")
+    # Hinweis: Case Split dauert evtl. länger zu generieren, da die Bedingungen sehr spezifisch sind (0 Closure aber 1 Modell)
+    task_cs = generator.generate_task(TaskType.DIRECT_INFERENCE, 2)
+    
+    print(f"Typ {task_cs.task_type} – Level {task_cs.level}")
+    print("Variablen:", task_cs.variables)
+    print("Prämissen:")
+    for i, p in enumerate(task_cs.premises, 1):
+        print(f"(P{i}) {print_logical_pretty(p)}")
 
-        # Check
-        used_vars = [v for v in task_cs.variables if v in set().union(*[p.free_symbols for p in task_cs.premises])]
-        
-        # 1. Closure Check (sollte leer sein)
-        closure = deductive_literal_closure(task_cs.premises, used_vars)
-        print(f"\nInitiale Closure (ohne Annahme): {closure} (Sollte leer sein)")
-        
-        # 2. Modell Check (Sollte genau 1 sein)
-        sols = all_models(task_cs.premises, used_vars)
-        print(f"Anzahl Modelle: {len(sols)}")
-        print("Lösung:", sols[0] if sols else "Keine")
+    # Check
+    used_vars = [v for v in task_cs.variables if v in set().union(*[p.free_symbols for p in task_cs.premises])]
+    
+    # 1. Closure Check (sollte leer sein)
+    closure = deductive_literal_closure(task_cs.premises, used_vars)
+    print(f"\nInitiale Closure (ohne Annahme): {closure}")
+    
+    # 2. Modell Check (Sollte genau 1 sein)
+    sols = all_models(task_cs.premises, used_vars)
+    print(f"Anzahl Modelle: {len(sols)}")
+    print("Lösung:", *sols )
 
-    except RuntimeError as e:
-        print(e)
+
+
+
+
+    # A, B, C, D, E = symbols("A B C D E")
+    # vars = symbols("A B C D E")
+
+
+    # premises = [
+    #     Implies(Not(E), D),
+    #     Or(Not(E), Not(Or(D, A))),
+    #     Or(Not(D), A),
+    #     Implies(And(E, Not(D)), A),
+    #     Implies(Or(Not(B), Not(A)), And(E, C)),
+    #     Implies(And(Not(C), B), And(Not(A), B))
+    # ]
+
+    # for i, p in enumerate(premises, 1):
+    #     print(f"(P{i}) {print_logical_pretty(p)}")
+
+    # print("\n Closure:")
+    # dict = deductive_literal_closure(premises=premises, vars_seq= vars)
+    # print(dict)
+
+    # print("\n Lösung(en)/Modell(e)")
+    # models = all_models(premises=premises, vars=vars)
+    # print(models)
+
