@@ -34,19 +34,18 @@ def random_formula(vars, max_depth: int, allowed_ops: Sequence[str], op_weights:
         v = random.choice(vars)
         return v if random.random() < 0.5 else Not(v)
 
-    # Sichere Extraktion der Gewichte
-    weights_map = {op: float(op_weights.get(op, 1.0)) for op in allowed_ops}    #Hier noch Exception falls eine Gewichte und nicht Gewichte für jeden OP
+    weights_map = {op: float(op_weights.get(op, 1.0)) for op in allowed_ops}    
     ops = list(allowed_ops)
     weights = [weights_map.get(op, 1.0) for op in ops]
 
-    # Defensive: falls alle Gewichte ungültig sind
+    # Falls alle Gewichte ungültig sind
     if all((w == 0 or math.isnan(w)) for w in weights):
         weights = [1.0] * len(weights)
 
     op = random.choices(ops, weights=weights, k=1)[0]
     
     if op == "not":
-        return Not(random_formula(vars, max_depth - 1, allowed_ops, op_weights))
+        return Not(random_formula(vars, max_depth -1, allowed_ops, op_weights))
 
     left = random_formula(vars, max_depth - 1, allowed_ops, op_weights)
     right = random_formula(vars, max_depth - 1, allowed_ops, op_weights)
@@ -70,7 +69,7 @@ def random_formula(vars, max_depth: int, allowed_ops: Sequence[str], op_weights:
 
 def all_models(premises: List[Boolean], vars) -> List[Dict]:
     """
-    Liefert alle Modelle (Lösungen) der Konjunktion aller Prämissen einer Aufgabe (=bestimmt die Lösung(en) der Aufgabe)
+    Liefert alle Modelle (Lösungen) der Konjunktion aller Prämissen einer Aufgabe (= bestimmt die Lösung(en) der Aufgabe)
     """
     models = []
     n = len(vars)
@@ -90,34 +89,6 @@ def all_models(premises: List[Boolean], vars) -> List[Dict]:
             models.append(valuation)
 
     return models
-
-
-
-
-def entails(premises: List[Boolean], formula: Boolean, vars) -> bool:
-    """
-    [Grundlegender Ableitungsbeweis]
-    Prüft, ob die 'formula' zwingend aus der Menge der 'premises' folgt (Γ ⊨ φ).
-    
-    Verarbeitung: Iteriert über alle 2^n Belegungen. Sucht nach einem 
-    Gegenbeispiel (Modell, das Γ erfüllt, aber φ nicht).
-    
-    Abgrenzung: Atomarer Wahrheitsbeweis (True/False). Dient als Baustein für 
-    die komplexe iterative Ableitung in 'deductive_literal_closure' und 
-    den semantischen Kanten-Check.
-    """
-    n = len(vars)
-    # Suche nach einem Gegenbeispiel
-    for bits in product([False, True], repeat=n):
-        valuation = {vars[i]: bits[i] for i in range(n)}
-        
-        # 1. Prüfe, ob alle Prämissen wahr sind (Γ erfüllt)
-        if all(bool(p.subs(valuation)) for p in premises):
-            
-            # 2. Prüfe, ob die Folgerung φ falsch ist (Gegenbeispiel)
-            if not bool(formula.subs(valuation)):
-                return False  # Gegenbeispiel gefunden
-    return True  # Kein Gegenbeispiel gefunden, also folgt φ zwingend
 
 
 
@@ -174,60 +145,42 @@ def wrap_if_needed(expr):
 
 
 
-def _premises_connectivity_summary(premises: List[Boolean], used_vars) -> Tuple[bool, bool, bool]:
+def _premises_connectivity_summary(premises: List[Boolean], used_vars) -> Tuple[bool, bool]:
     """
-    [Strukturelle Analyse]
-    Baut einen Graphen über die Prämissen (Knoten) und analysiert deren Beziehungen.
-    Eine Kante Pi -> Pj existiert bei: 
-    a) Syntaktischer Überlappung (gemeinsame Variablen), ODER
-    b) Semantischer Verbindung (Pi ⊨ Pj oder Pj ⊨ Pi, mithilfe von 'entails').
-
-    Ausgabe: (is_connected, any_direct_entail, any_edge).
-
-    Abgrenzung: Prüft die innere Struktur des Problems, nicht die Lösung.
+    Prüft, ob die Prämissen einen zusammenhängenden Graphen bilden. Nur zusammenhängende Prämissen bilden eine didaktisch sinnvolle Aufgabe. 
+    Eine Kante existiert zwischen Pi und Pj, wenn sie gemeinsame Variablen nutzen.
     """
     n = len(premises)
+
+    # Einzelne Prämisse ist trivialerweise "verbunden"
     if n <= 1:
-        return True, False, False
+        return True, True 
 
-    adj = {i: set() for i in range(n)}
-    #any_entail = False    # Ist irgendeine Kante vorhanden (syntaktisch oder semantisch)?
-    direct_entail = False # Ist eine Kante durch semantische Folgerung (Pi ⊨ Pj) entstanden?
+    # Für jede Prämisse wird ein leeres Set angelegt, in dem gespeichert wird welche Prämisse mit dieser jewiligen verbunden ist
+    adj = {i: set() for i in range(n)}          
+    
 
+    # Die Variablenmenge jeder Prämisse wird in einem Set und alle Sets in einer Liste abgespeichert
     sym_sets: List[Set] = [set(p.free_symbols) for p in premises]
 
-    # Finde Kanten zwischen allen Prämissenpaaren
+    # Baue Kanten basierend auf Variablen-Overlap
+    # Alle Prämissen miteinander vergleichen und doppelte Vergleiche ausschließen (Nicht (P1)(P2) und (P2)(P1))
+    found_edge = False
     for i in range(n):
         for j in range(i + 1, n):
-            # 1. Syntaktischer Overlap
-            if sym_sets[i] & sym_sets[j]:
+            # Schnittmenge der vorkommenden Variablen der Prämissen i und j wird geprüft --> falls ein gemeinsames Element existiert wird eine Kante erzeugt 
+            if not sym_sets[i].isdisjoint(sym_sets[j]):
                 adj[i].add(j)
                 adj[j].add(i)
-                #any_entail = True
-                continue
+                found_edge = True
 
-            # 2. Semantische Verbindung (teuer, da es entails aufruft)
-            if entails([premises[i]], premises[j], used_vars):
-                adj[i].add(j)
-                adj[j].add(i)
-                #any_entail = True
-                direct_entail = True
-                continue
 
-            if entails([premises[j]], premises[i], used_vars):
-                adj[i].add(j)
-                adj[j].add(i)
-                #any_entail = True
-                direct_entail = True
-                continue
-
-    any_edge = any(len(neis) > 0 for neis in adj.values())
-    
-    # 3. Zusammenhangsprüfung (BFS/Breitensuche)
+    # Überprüfung, ob über gemeinsame Variablen (hier bildlich gesehen 'Kanten') eine gemeinsame Verbindung über alle Prämissen hergestellt werden
+    # Wenn alle Prämissen (über Umwege) miteinander verbunden sind, ist die Aufgabe zusammenhängend und didaktisch sinnvoll und gilt als 'is_connected'
     visited = set()
-    # Beginne die Suche bei der ersten Prämisse
     queue = deque([0])
     visited.add(0)
+    
     while queue:
         u = queue.popleft()
         for v in adj[u]:
@@ -236,53 +189,12 @@ def _premises_connectivity_summary(premises: List[Boolean], used_vars) -> Tuple[
                 queue.append(v)
 
     is_connected = (len(visited) == n)
-    # is_connected: Stellt sicher, dass das Problem nicht zerfällt (muss True sein).
-    # direct_entail: Zeigt Redundanz/einfache Ableitung (muss nicht zwingend True sein).
-    # any_edge: Stellt sicher, dass es überhaupt eine Beziehung gibt (muss True sein).
-    return is_connected, direct_entail, any_edge
+    
+    
+    return is_connected, found_edge
 
 
 
-
-# def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol]) -> Dict[Symbol, bool]:
-#     """
-#     [Iterative Ableitung]
-#     Findet den Fixpunkt aller Literale (v oder ¬v), die durch einfache Kettenableitung 
-#     (Modus Ponens, Modus Tollens, etc.) aus den Prämissen folgen. 
-#     Dabei werden bereits abgeleitete Literale als zusätzliche Prämissen verwendet.
-
-#     Verarbeitung: Nutzt 'entails' in einer Schleife, um mehrstufige Schlüsse zu finden.
-#     Ausgabe: Mapping Symbol -> Wahrheitswert (nur für gefundene Literale).
-#     """
-#     known: Dict[Symbol, bool] = {}
-
-#     def known_as_formulas() -> List[Boolean]:
-#         # Hilfsfunktion zur Umwandlung des aktuellen Wissens in SymPy-Formeln
-#         return [s if val else Not(s) for s, val in known.items()]
-
-#     changed = True
-#     while changed:
-#         changed = False
-#         for v in vars_seq:
-#             if v in known:
-#                 continue
-            
-#             # Die aktuelle Prämissenmenge besteht aus Originalprämissen + dem aktuellen Wissen
-#             current_premises = list(premises) + known_as_formulas()
-            
-#             # Prüfe, ob v folgt (Γ + known ⊨ v)
-#             if entails(current_premises, v, list(vars_seq)):
-#                 known[v] = True
-#                 changed = True
-#                 continue
-
-#             # Prüfe, ob ¬v folgt (Γ + known ⊨ ¬v)
-#             if entails(current_premises, Not(v), list(vars_seq)):
-#                 known[v] = False
-#                 changed = True
-#                 continue
-
-#     return known
 
 
 def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol]) -> Dict[Symbol, bool]:
@@ -309,9 +221,9 @@ def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol
         new_clauses = []
         
         for clause in cnf_clauses:
-            # Wir bereinigen die Klausel basierend auf dem, was wir schon wissen
+            # Klausel bereinigen basierend auf dem, was schon bekannt ist
             
-            # Zerlege Klausel in Literale (Disjunktion)
+            # Zerlege Klausel in Literale 
             lits = list(clause.args) if isinstance(clause, Or) else [clause]
             
             # Filtere Literale
@@ -332,23 +244,22 @@ def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol
                     if (val and not is_neg) or (not val and is_neg):
                         clause_satisfied = True
                         break
-                    # Wenn Literal falsch ist (z.B. A ist False und wir haben A): Literal fällt weg
-                    # (Wir fügen es nicht zu active_lits hinzu)
+
                 else:
                     active_lits.append(lit)
             
             if clause_satisfied:
                 continue
-                
+            
+
             # --- UNIT PROPAGATION ---
-            # Wenn nur noch 1 Literal übrig ist, MUSS dieses wahr sein
+
+            # Wenn die Liste kein Element enthält, dann kann auf keine Variable direkt geschlossen werden
             if len(active_lits) == 0:
-                # Widerspruch (leere Klausel) - sollte bei validen Aufgaben nicht passieren,
-                # aber wir brechen hier ab, da wir nur "sicheres Wissen" wollen.
                 return known 
-                
+            
+            # Wenn ein nur einzelnes Literal in 'active_lits' existiert, dann kann daraus eine direkte Folgerung abgeleitet werden (z.B. A --> A ist wahr) 
             if len(active_lits) == 1:
-                # Bingo! Wir haben eine neue direkte Folgerung
                 unit = active_lits[0]
                 if isinstance(unit, Not):
                     s, v = unit.args[0], False
@@ -359,8 +270,6 @@ def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol
                     known[s] = v
                     changed = True
             else:
-                # Klausel ist noch nicht gelöst, kommt in die nächste Runde
-                # Rekonstruiere Or für den nächsten Durchlauf
                 new_clauses.append(Or(*active_lits))
         
         cnf_clauses = new_clauses
@@ -368,7 +277,8 @@ def deductive_literal_closure(premises: List[Boolean], vars_seq: Sequence[Symbol
     return known
 
 
-def is_good_task_type_direct_inference(premises: List[Boolean], vars) -> bool:
+
+def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> bool:
     """
     Prüft, ob alle Prämissen ganzheitlich eine geeignete DIRECT_INFERENCE-Aufgabe bilden, indem 
     verschiedene logische und strukturelle Checks durchgeführt werden.
@@ -400,27 +310,29 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars) -> bool:
     
     if len(models) == 0:
         return False
-
-    # # 5) Stabile Literale (mindestens eine Variable muss in allen Modellen den gleichen Wert haben)
-    # # Redundanter, aber schneller Vor-Check
-    # stable_literals_found = False
-    # for v in used_vars:
-    #     vals = [m[v] for m in models]
-    #     if all(vals) or not any(vals):
-    #         stable_literals_found = True
-    #         break
-    # if not stable_literals_found:
-    #     return False
-
-    # # 6) Deduktive Closure prüfen (Kettenableitungen ohne Annahmen)
-    # closure = deductive_literal_closure(premises, used_vars_seq)
     
-    # # NEU: Threshold aus der Konfiguration laden
-    # threshold = spec.closure_threshold_func(len(used_vars_seq))
-    
-    # # Check 6a: Wurde der Level-spezifische Threshold erreicht?
-    # if len(closure) < threshold:
-    #     return False
+    # Einzelne Prämisse darf nicht zu viele Variablen erschließen (sonst ist die Aufgabe zu trivial)
+    # Erst wirklich relevant für Level 3 und Level 4 Aufgaben
+    for p in premises:
+
+        p_syms = list(p.free_symbols)
+        if not p_syms: 
+            continue
+        
+        local_closure = deductive_literal_closure([p], p_syms)
+        
+        if len(local_closure) >= 2:
+            return False
+
+    # Ab Level 3 soll eine Prämisse nicht nur noch einer Variable bestehen drürfen (sonst zu trivial)
+    if level >= 3:
+            for p in premises:
+                if isinstance(p, Symbol):
+                    return False
+                
+                if isinstance(p, Not) and isinstance(p.args[0], Symbol):
+                    return False
+
 
 
     # Es soll maximal eine Variable existieren, die mittels schrittweise logischem Schließen nicht eindeutig bestimmbar ist
@@ -431,7 +343,6 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars) -> bool:
 
     # Eine Aufgabe soll keine redundanten Prämissen enthalten
     # Wenn die Anzahl der möglichen Lösungen beim Entfernen einer Prämisse gleich bleibt, war diese redundant
-
     for i in range(len(premises)):
 
         subset_premises = premises[:i] + premises[i+1:]
@@ -443,29 +354,10 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars) -> bool:
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, direct_entail, any_edge = _premises_connectivity_summary(premises, used_vars)
-    if not is_connected or not any_edge:
+    is_connected, found_edge = _premises_connectivity_summary(premises, used_vars)
+    if not is_connected or not found_edge:
         return False
     
-    # # 7b: Wenn keine direkte semantische Ableitung (Pi ⊨ Pj) gefunden wurde:
-    # # Stelle sicher, dass zumindest eine Prämisse allein informativ ist (Startpunkt).
-    # if not direct_entail:
-    #     informative = False
-    #     for Pi in premises:
-    #         # Prüfe, ob Pi alleine ein Literal ableitet
-    #         for v in used_vars:
-    #             if entails([Pi], v, used_vars) or entails([Pi], Not(v), used_vars):
-    #                 informative = True
-    #                 break
-    #         if informative:
-    #             break
-    #     if not informative:
-    #         # Die Aufgabe ist zu vage/schwer zu starten, wenn keine direkte Folgerung
-    #         # und keine Prämisse allein informativ ist.
-    #         return False
-
-
-
 
     return True
 
@@ -504,6 +396,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
     initial_closure = deductive_literal_closure(premises, used_vars_seq)
     if len(initial_closure) > 0: 
         return False 
+    
 
 
     # Lösbarkeit durch eine simulierte Fallunterscheidung prüfen
@@ -539,8 +432,8 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, _, any_edge = _premises_connectivity_summary(premises, used_vars)
-    if not is_connected or not any_edge:
+    is_connected, found_edge = _premises_connectivity_summary(premises, used_vars)
+    if not is_connected or not found_edge:
         return False
 
 
@@ -577,7 +470,7 @@ class TaskGenerator:
             ]
 
             if task_type == TaskType.DIRECT_INFERENCE:
-                if is_good_task_type_direct_inference(premises, list(vars)):
+                if is_good_task_type_direct_inference(premises, list(vars), level):
                     return Task(
                         task_type=task_type,
                         level=level,
@@ -602,7 +495,7 @@ if __name__ == "__main__":
 
     generator = TaskGenerator(DIFFICULTY_CONFIG)
 
-    task = generator.generate_task(TaskType.DIRECT_INFERENCE, 2)
+    task = generator.generate_task(TaskType.DIRECT_INFERENCE, 3)
     print(f"Typ {task.task_type} – Level {task.level}")
     print("Variablen:", task.variables)
     print("Prämissen:")
@@ -616,5 +509,5 @@ if __name__ == "__main__":
         print(solution)
 
     closure = deductive_literal_closure(task.premises, task.variables)
-    print(f"\nInitiale Closure (ohne Annahme): {closure}")
+    print(f"\n Variablen, auf die man direkt schließen kann: {closure}")
     
