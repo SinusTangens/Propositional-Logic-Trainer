@@ -36,7 +36,7 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
         num_premises_range=(2, 2),
         max_depth=1,
         allowed_ops=["not", "or", "imp", "xor", "equiv"],
-        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "equiv": 1.0},
+        op_weights={"not": 0.75, "or": 1.0, "imp": 1.0, "xor": 1.0, "equiv": 1.0},
     ),
 
     (TaskType.DIRECT_INFERENCE, 2): DifficultySpec(
@@ -44,7 +44,7 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
         num_premises_range=(2, 2),
         max_depth=2,
         allowed_ops=["not", "and", "or", "imp", "xor", "equiv"],
-        op_weights={"not": 1.0, "and": 0.75, "or": 1.0, "imp": 1.0, "xor": 1.0, "equiv": 1.0},
+        op_weights={"not": 0.75, "and": 0.75, "or": 1.0, "imp": 1.0, "xor": 0.5, "equiv": 0.5},
     ),
 
     (TaskType.DIRECT_INFERENCE, 3): DifficultySpec(
@@ -70,7 +70,7 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
         num_premises_range=(4, 4), 
         max_depth=1,
         allowed_ops=["not", "or", "imp", "xor", "equiv"], 
-        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "equiv": 1.0},
+        op_weights={"not": 0.75, "or": 1.0, "imp": 1.0, "xor": 0.75, "equiv": 0.75},
     ),
 
     (TaskType.CASE_SPLIT, 2): DifficultySpec(
@@ -78,7 +78,7 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
         num_premises_range=(5, 5),
         max_depth=2,
         allowed_ops=["not", "and", "or", "imp", "xor", "equiv"],
-        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "and": 1.0, "equiv": 0.8},
+        op_weights={"not": 0.75, "or": 1.0, "imp": 1.0, "xor": 0.75, "and": 1.0, "equiv": 0.75},
     ),
 
     (TaskType.CASE_SPLIT, 3): DifficultySpec(
@@ -86,6 +86,6 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
         num_premises_range=(6, 6),
         max_depth=2,
         allowed_ops=["not", "and", "or", "imp", "xor", "equiv"],
-        op_weights={"not": 1.0, "or": 1.0, "imp": 1.0, "xor": 1.0, "and": 1.0, "equiv": 1.0},
+        op_weights={"not": 0.75, "or": 1.0, "imp": 1.0, "xor": 0.75, "and": 1.0, "equiv": 0.75},
     ),
 }

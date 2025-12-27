@@ -29,8 +29,9 @@ def random_formula(vars, max_depth: int, allowed_ops: Sequence[str], op_weights:
     Erzeugt rekursiv eine zufällige SymPy-Formel über 'vars',
     unter Verwendung der erlaubten Operatoren und der übergebenen Gewichte.
     """
-
-    if max_depth == 0:
+    should_stop_early = (random.random() < 0.2) 
+    
+    if max_depth == 0 or (max_depth > 0 and should_stop_early):
         v = random.choice(vars)
         return v if random.random() < 0.5 else Not(v)
 
@@ -145,7 +146,7 @@ def wrap_if_needed(expr):
 
 
 
-def _premises_connectivity_summary(premises: List[Boolean], used_vars) -> Tuple[bool, bool]:
+def _premises_connectivity_summary(premises: List[Boolean]) -> Tuple[bool, bool]:
     """
     Prüft, ob die Prämissen einen zusammenhängenden Graphen bilden. Nur zusammenhängende Prämissen bilden eine didaktisch sinnvolle Aufgabe. 
     Eine Kante existiert zwischen Pi und Pj, wenn sie gemeinsame Variablen nutzen.
@@ -163,7 +164,6 @@ def _premises_connectivity_summary(premises: List[Boolean], used_vars) -> Tuple[
     # Die Variablenmenge jeder Prämisse wird in einem Set und alle Sets in einer Liste abgespeichert
     sym_sets: List[Set] = [set(p.free_symbols) for p in premises]
 
-    # Baue Kanten basierend auf Variablen-Overlap
     # Alle Prämissen miteinander vergleichen und doppelte Vergleiche ausschließen (Nicht (P1)(P2) und (P2)(P1))
     found_edge = False
     for i in range(n):
@@ -301,14 +301,14 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
         return False
     used_vars_seq = used_vars[:]  
 
-    # Mindestens eine Prämisse muss 2 Variablen  oder mehr enthalten (vor Allem relevant für Level 1)
+    # Mindestens eine Prämisse muss 2 Variablen oder mehr enthalten (vor Allem relevant für Level 1)
     if not any(len(p.free_symbols) >= 2 for p in premises):
         return False
 
-    # Eine Aufgabe soll keine widersprüchlichen Prämissen enthalten (=muss lösbar sein) 
+    # Eine Aufgabe soll keine widersprüchlichen Prämissen enthalten (=muss lösbar sein) und keine triviale Lösung besitzen (jede Variable beliebig)
     models = all_models(premises, used_vars)
     
-    if len(models) == 0:
+    if len(models) == 0 or len(models) == 2**len(used_vars):
         return False
     
     # Einzelne Prämisse darf nicht zu viele Variablen erschließen (sonst ist die Aufgabe zu trivial)
@@ -321,21 +321,38 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
         
         local_closure = deductive_literal_closure([p], p_syms)
         
-        if len(local_closure) >= 2:
+        if len(local_closure) >= 3:
             return False
 
-    # Ab Level 3 soll eine Prämisse nicht nur noch einer Variable bestehen drürfen (sonst zu trivial)
+
+
+    # Ab Level 3 soll eine Prämisse nicht nur noch aus einer Variable bestehen drürfen (sonst zu trivial)
     if level >= 3:
-            for p in premises:
-                if isinstance(p, Symbol):
-                    return False
-                
-                if isinstance(p, Not) and isinstance(p.args[0], Symbol):
-                    return False
+        for p in premises:
+            if isinstance(p, Symbol):
+                return False
+            
+            if isinstance(p, Not) and isinstance(p.args[0], Symbol):
+                return False
+    
+
+    #Level 2 Aufgaben sollen auf Grund des Schwierigkeitsgrades eine triviale Prämisse enthalten (z.B. (P1) A)
+    if level == 2:
+
+        has_trivial_premise = False
+        for p in premises:
+            if isinstance(p, Symbol) or (isinstance(p, Not) and isinstance(p.args[0], Symbol)):
+                has_trivial_premise = True
+                break
+        
+        if not has_trivial_premise:
+            return False
+        
 
 
 
-    # Es soll maximal eine Variable existieren, die mittels schrittweise logischem Schließen nicht eindeutig bestimmbar ist
+
+    # Aus didaktischen Gründen soll bei diesem Aufgabentyp auf maximal eine Variable nicht automatisch geschlossen werden können
     closure = deductive_literal_closure(premises, used_vars_seq)
     if len(closure) < (len(used_vars) -1):
         return False
@@ -354,7 +371,7 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, found_edge = _premises_connectivity_summary(premises, used_vars)
+    is_connected, found_edge = _premises_connectivity_summary(premises)
     if not is_connected or not found_edge:
         return False
     
@@ -401,7 +418,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
     # Lösbarkeit durch eine simulierte Fallunterscheidung prüfen
     # Es muss mindestens EINE Variable exisitieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
-    split_useful = False
+    split_useful_count = 0
     
     for v in used_vars:
         
@@ -414,10 +431,10 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
         if (len(models_true) == 0 and len(models_false) == 1) or \
            (len(models_true) == 1 and len(models_false) == 0):
-            split_useful = True
+            split_useful_count =+ 1
             break
             
-    if not split_useful:
+    if split_useful_count > 1:
         return False 
 
 
@@ -432,7 +449,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, found_edge = _premises_connectivity_summary(premises, used_vars)
+    is_connected, found_edge = _premises_connectivity_summary(premises)
     if not is_connected or not found_edge:
         return False
 
@@ -443,6 +460,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
 class TaskGenerator:
+
 
     def __init__(self, config: Dict[Tuple[TaskType, int], DifficultySpec]):
         self.config = config
@@ -462,7 +480,7 @@ class TaskGenerator:
 
         # Erzeugungsloop, bis passende Aufgabe gefunden wurde
         # Anzahl an Iterationen frei gewählt
-        for attempt in range(5000):
+        for attempt in range(20000):
             num_premises = random.randint(*spec.num_premises_range)
             premises = [
                 random_formula(vars, spec.max_depth, spec.allowed_ops, spec.op_weights)
@@ -495,7 +513,7 @@ if __name__ == "__main__":
 
     generator = TaskGenerator(DIFFICULTY_CONFIG)
 
-    task = generator.generate_task(TaskType.DIRECT_INFERENCE, 3)
+    task = generator.generate_task(TaskType.CASE_SPLIT, 3)
     print(f"Typ {task.task_type} – Level {task.level}")
     print("Variablen:", task.variables)
     print("Prämissen:")
