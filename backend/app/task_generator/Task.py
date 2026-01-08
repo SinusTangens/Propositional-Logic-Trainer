@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Tuple, Sequence, Dict, Callable
+from typing import List, Tuple, Sequence, Dict
 from sympy.logic.boolalg import Boolean
 
 
 
 class TaskType(Enum):
-    DIRECT_INFERENCE = "Direktes Schließen auf Variablenbelegungen auf Basis weniger Prämissen"  
+    DIRECT_INFERENCE = "Direktes Schließen der Variablenbelegungen auf Basis weniger Prämissen"  
     CASE_SPLIT = "Durchführung einer initialen Fallunterscheidung, um alle Variablenbelegungen auf Basis vieler Prämissen zu bestimmen"       
 
 

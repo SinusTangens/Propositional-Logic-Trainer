@@ -146,7 +146,7 @@ def wrap_if_needed(expr):
 
 
 
-def _premises_connectivity_summary(premises: List[Boolean]) -> Tuple[bool, bool]:
+def premises_connectivity_summary(premises: List[Boolean]) -> Tuple[bool, bool]:
     """
     Prüft, ob die Prämissen einen zusammenhängenden Graphen bilden. Nur zusammenhängende Prämissen bilden eine didaktisch sinnvolle Aufgabe. 
     Eine Kante existiert zwischen Pi und Pj, wenn sie gemeinsame Variablen nutzen.
@@ -371,7 +371,7 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, found_edge = _premises_connectivity_summary(premises)
+    is_connected, found_edge = premises_connectivity_summary(premises)
     if not is_connected or not found_edge:
         return False
     
@@ -417,7 +417,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Lösbarkeit durch eine simulierte Fallunterscheidung prüfen
-    # Es muss mindestens EINE Variable exisitieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
+    # Es müssen mindestens ZWEI Variable exisitieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
     split_useful_count = 0
     
     for v in used_vars:
@@ -449,7 +449,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, found_edge = _premises_connectivity_summary(premises)
+    is_connected, found_edge = premises_connectivity_summary(premises)
     if not is_connected or not found_edge:
         return False
 
@@ -480,7 +480,7 @@ class TaskGenerator:
 
         # Erzeugungsloop, bis passende Aufgabe gefunden wurde
         # Anzahl an Iterationen frei gewählt
-        for attempt in range(20000):
+        for _ in range(20000):
             num_premises = random.randint(*spec.num_premises_range)
             premises = [
                 random_formula(vars, spec.max_depth, spec.allowed_ops, spec.op_weights)
@@ -513,7 +513,7 @@ if __name__ == "__main__":
 
     generator = TaskGenerator(DIFFICULTY_CONFIG)
 
-    task = generator.generate_task(TaskType.CASE_SPLIT, 3)
+    task = generator.generate_task(TaskType.DIRECT_INFERENCE, 2)
     print(f"Typ {task.task_type} – Level {task.level}")
     print("Variablen:", task.variables)
     print("Prämissen:")
