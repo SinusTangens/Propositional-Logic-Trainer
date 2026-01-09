@@ -20,14 +20,12 @@ prop-logic-trainer/
 │   │   │   ├── database.py            # Erstellt DB-Verbindung
 │   │   │   └── logging.py             # Logging-Konfiguration
 │   │   ├── logic_engine/              # Kernlogik zur Formelverarbeitung
-│   │   │   ├── parser/                # Zerlegt Formeln in Syntaxbäume
-│   │   │   ├── evaluator/             # Berechnet Wahrheitswerte & Modelle
-│   │   │   └── inference/             # Prüft logische Ableitbarkeit
+│   │   │   ├── explanation/           # Ausgaben bei manueller Lösung der Übungsaufgaben
+│   │   │   └── solver/                # Lösung der generierten Aufgaben 
 │   │   ├── task_generator/            # Generiert Übungsaufgaben
 │   │   ├── user_model/                # Speichert Nutzerfortschritt (Basis für Adaptivität)
 │   │   └── utils/                     # Hilfsfunktionen (Formatierung, Tools)
-│   ├── tests/                         # Unit-Tests für Backend-Module
-│   └── requirements.txt               # Python-Abhängigkeiten
+│   └── tests/                         # Unit-Tests für Backend-Module
 │
 ├── frontend/                          # Clientseitige Webanwendung (React/TS)
 │   ├── public/                        # Statische Dateien (Favicon, Logos, manifest)
@@ -57,6 +55,7 @@ prop-logic-trainer/
 │
 ├── .gitignore                         # Dateien/Ordner, die Git ignoriert
 ├── README.md                          # Projektbeschreibung (diese Datei)
+├── requirements.txt                   # Python-Abhängigkeiten
 └── LICENSE                            # Lizenz des Projekts (optional)
 ```
 

@@ -33,6 +33,7 @@ class BooleanTable:
         Target: [A, C, B] (Shape 2x2x2)
         Ergebnis: Die Daten werden transponiert und entlang C wiederholt.
         """
+
         if self.variables == new_vars:
             return self
 
@@ -102,6 +103,7 @@ class BooleanTable:
         Löscht eine Variable durch Marginalisierung (Maximum / Logisches ODER).
         Entspricht T^{-v}.
         """
+
         if var_to_remove not in self.variables:
             return self
         
@@ -141,6 +143,8 @@ class BooleanTable:
 
 
     def is_consistent(self) -> bool:
-        """Prüft, ob die Tabelle mindestens eine 1 enthält (nicht widersprüchlich ist)."""
+        """
+        Prüft, ob die Tabelle mindestens eine 1 enthält (nicht widersprüchlich ist).
+        """
 
         return self.data.any().item()

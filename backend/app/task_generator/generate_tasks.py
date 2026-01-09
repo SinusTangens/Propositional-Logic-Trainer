@@ -6,7 +6,7 @@ from typing import List, Tuple, Sequence, Dict, Optional, Set, Any
 from itertools import product
 from collections import deque
 
-from Task import Task, TaskType, DifficultySpec, DIFFICULTY_CONFIG
+from .Task import Task, TaskType, DifficultySpec, DIFFICULTY_CONFIG
 
 from sympy import symbols, Symbol
 from sympy.logic.boolalg import (
@@ -460,10 +460,13 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
 class TaskGenerator:
-
+    """
+    Klasse für die Erstellung eines Aufgabengenerators auf Basis vordefinierter Regeln
+    """
 
     def __init__(self, config: Dict[Tuple[TaskType, int], DifficultySpec]):
         self.config = config
+
 
     def generate_task(self, task_type: TaskType, level: int) -> Task:
 
@@ -509,23 +512,23 @@ class TaskGenerator:
 
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    generator = TaskGenerator(DIFFICULTY_CONFIG)
+#     generator = TaskGenerator(DIFFICULTY_CONFIG)
 
-    task = generator.generate_task(TaskType.DIRECT_INFERENCE, 2)
-    print(f"Typ {task.task_type} – Level {task.level}")
-    print("Variablen:", task.variables)
-    print("Prämissen:")
-    for p_enum, p in enumerate(task.premises, start=1):
-        print(f"(P{p_enum})", print_logical_pretty(p))
+#     task = generator.generate_task(TaskType.DIRECT_INFERENCE, 2)
+#     print(f"Typ {task.task_type} – Level {task.level}")
+#     print("Variablen:", task.variables)
+#     print("Prämissen:")
+#     for p_enum, p in enumerate(task.premises, start=1):
+#         print(f"(P{p_enum})", print_logical_pretty(p))
 
-    solutions = all_models(task.premises, task.variables)
+#     solutions = all_models(task.premises, task.variables)
 
-    print("\nLösung(en):")
-    for solution in solutions:
-        print(solution)
+#     print("\nLösung(en):")
+#     for solution in solutions:
+#         print(solution)
 
-    closure = deductive_literal_closure(task.premises, task.variables)
-    print(f"\n Variablen, auf die man direkt schließen kann: {closure}")
+#     closure = deductive_literal_closure(task.premises, task.variables)
+#     print(f"\n Variablen, auf die man direkt schließen kann: {closure}")
     

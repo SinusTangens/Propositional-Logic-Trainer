@@ -1,13 +1,16 @@
 import sys
 import os
 
+
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
-app_dir = os.path.dirname(current_dir)
+logic_engine_dir = os.path.dirname(current_dir)
+app_dir = os.path.dirname(logic_engine_dir)
 if app_dir not in sys.path:
     sys.path.append(app_dir)
 
 from task_generator.Task import Task, TaskType
-from backend.app.logic_engine.solver.BooleanTable import BooleanTable
+from logic_engine.solver.BooleanTable import BooleanTable
 
 from typing import List, Dict, Any, Tuple, Optional
 import itertools
@@ -83,6 +86,7 @@ class BucketElimination:
         Forward Pass (Variable Elimination):
         Füllt self.history_buckets und bestimmt die globale Lösbarkeit (final_consistency).
         """
+
         if self.is_solved:
             return
 
@@ -139,6 +143,7 @@ class BucketElimination:
         Backward Pass:
         Bestimmt konkrete Lösungen der Variablen oder setzt sie auf None, wenn man aus ihnen nichts konkretes schließen kann.
         """
+
         if not self.is_solved:
             self.solve()
             
@@ -185,30 +190,30 @@ class BucketElimination:
 
 
 
-if __name__ == "__main__":
-    A, B, C, D = symbols('A B C D')
-    vars_list = [A, B, C, D]
+# if __name__ == "__main__":
+#     A, B, C, D = symbols('A B C D')
+#     vars_list = [A, B, C, D]
 
-    # Beispielaufgabe:
-    # P1: Nicht(B oder Nicht D) -> B=False, D=True impliziert
-    p1 = Not(Or(B, Not(D))) 
-    # P2: (A oder Nicht D) UND ... -> Wenn D=True, muss A=True sein
-    p2 = And(Or(A, Not(D)), Or(C, Not(D)))
+#     # Beispielaufgabe:
+#     # P1: Nicht(B oder Nicht D) -> B=False, D=True impliziert
+#     p1 = Not(Or(B, Not(D))) 
+#     # P2: (A oder Nicht D) UND ... -> Wenn D=True, muss A=True sein
+#     p2 = And(Or(A, Not(D)), Or(C, Not(D)))
 
-    task = Task(
-        task_type=TaskType.DIRECT_INFERENCE,
-        level=2,
-        premises=[p1, p2],
-        variables=vars_list
-    )
+#     task = Task(
+#         task_type=TaskType.DIRECT_INFERENCE,
+#         level=2,
+#         premises=[p1, p2],
+#         variables=vars_list
+#     )
 
-    print("Starte Solver...")
-    solver = BucketElimination(task=task)
+#     print("Starte Solver...")
+#     solver = BucketElimination(task=task)
     
-    solver.solve()
-    print(f"Aufgabe ist lösbar: {solver.final_consistency}")
+#     solver.solve()
+#     print(f"Aufgabe ist lösbar: {solver.final_consistency}")
     
-    if solver.final_consistency:
-        sol = solver.get_solution()
-        print("Gefundene Lösung:", sol)
-        # Erwartet: A:True, B:False, D:True, C:True oder None (da C nur mit D verknüpft war)
+#     if solver.final_consistency:
+#         sol = solver.get_solution()
+#         print("Gefundene Lösung:", sol)
+#         # Erwartet: A:True, B:False, D:True, C:True oder None (da C nur mit D verknüpft war)
