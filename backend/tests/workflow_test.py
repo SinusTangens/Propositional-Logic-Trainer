@@ -37,7 +37,6 @@ def main():
 
         generator = TaskGenerator(DIFFICULTY_CONFIG) 
         task = generator.generate_task(task_type, level)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern
-        task = generator.generate_task(TaskType.CASE_SPLIT, 3)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern
 
         
         if not task:
