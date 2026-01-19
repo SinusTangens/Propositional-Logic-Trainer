@@ -24,7 +24,7 @@ from sympy import Symbol, symbols, Not, Or, And
 class BucketElimination:
     """
     Implementiert den Shenoy-Shafer Algorithmus (Bucket Elimination) für aussagenlogische Aufgaben.
-    Dieser Solver nutzt Boolean Arrays (Tabellen), um logische Abhängigkeiten zu verwalten.
+    Dieser Solver nutzt Boolean Numpy Arrays (Tabellen), um logische Abhängigkeiten zu verwalten.
     """
 
     def __init__(self, task: Task):
