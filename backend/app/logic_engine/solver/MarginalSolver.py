@@ -118,8 +118,7 @@ class BucketElimination:
             # Neue Tabelle speichern
             if not np.all(marginalized_t.data):         # Tabelle wird nicht gespeichert, wenn sie nur 1en enthält (enthält keine weiter nutzbaren Informationen)
                  other_tables.append(marginalized_t)
-            elif not marginalized_t.is_consistent():    # 
-                 # Widerspruch (T_0) muss erhalten bleiben
+            elif not marginalized_t.is_consistent():    # Falls eine Widerspruchstabelle muss diese gespeichert werden
                  other_tables.append(marginalized_t)
             
             current_tables = other_tables
@@ -187,33 +186,3 @@ class BucketElimination:
                 raise RuntimeError(f"Inkonsistenz bei Variable {var} trotz konsistentem Solver-Status.")
                 
         return solution
-
-
-
-# if __name__ == "__main__":
-#     A, B, C, D = symbols('A B C D')
-#     vars_list = [A, B, C, D]
-
-#     # Beispielaufgabe:
-#     # P1: Nicht(B oder Nicht D) -> B=False, D=True impliziert
-#     p1 = Not(Or(B, Not(D))) 
-#     # P2: (A oder Nicht D) UND ... -> Wenn D=True, muss A=True sein
-#     p2 = And(Or(A, Not(D)), Or(C, Not(D)))
-
-#     task = Task(
-#         task_type=TaskType.DIRECT_INFERENCE,
-#         level=2,
-#         premises=[p1, p2],
-#         variables=vars_list
-#     )
-
-#     print("Starte Solver...")
-#     solver = BucketElimination(task=task)
-    
-#     solver.solve()
-#     print(f"Aufgabe ist lösbar: {solver.final_consistency}")
-    
-#     if solver.final_consistency:
-#         sol = solver.get_solution()
-#         print("Gefundene Lösung:", sol)
-#         # Erwartet: A:True, B:False, D:True, C:True oder None (da C nur mit D verknüpft war)

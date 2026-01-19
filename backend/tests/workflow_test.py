@@ -2,6 +2,7 @@ import sys
 import os
 import random
 
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.dirname(current_dir)
 if backend_dir not in sys.path:
@@ -21,7 +22,7 @@ def main():
     Manuelles Testen des Workflows von der Aufgabengenerierung über das algorithmische Lösen bis hin zur Feedbackgenerierung 
     """
 
-    print("=== START INTEGRATION TEST: LOGIC TRAINER ===\n")
+    print("=== START INTEGRATION TEST: Workflow ===\n")
 
     print("1. Generiere Aufgabe...")
     try:
@@ -35,7 +36,9 @@ def main():
             raise ValueError("Unbekannter Aufgabentyp.")
 
         generator = TaskGenerator(DIFFICULTY_CONFIG) 
-        task = generator.generate_task(TaskType.DIRECT_INFERENCE, level)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern
+        task = generator.generate_task(task_type, level)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern
+        task = generator.generate_task(TaskType.CASE_SPLIT, 3)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern
+
         
         if not task:
             print("Fehler: Generator konnte keine Aufgabe erstellen.")
@@ -59,7 +62,6 @@ def main():
         solver = BucketElimination(task)
         solver.solve()
         
-        # Nur für uns zur Kontrolle (Cheat Sheet):
         real_solution = solver.get_solution()
         
         if solver.final_consistency is False:
@@ -75,7 +77,7 @@ def main():
     print("\n" + "-"*40 + "\n")
 
 
-    print("3. Simulation: Student antwortet")
+    print("3. Simulation: Nutzer antwortet")
     
     explainer = FeedbackEngine(solver)
 
@@ -101,10 +103,9 @@ def main():
             continue
             
 
-        print("\n   ... Analyse läuft ...")
         feedback = explainer.generate_feedback(variable, student_input)
         
-        print(f"   FEEDBACK VOM SYSTEM:\n   Running >> {feedback}")
+        print(f"\n   FEEDBACK VOM SYSTEM:\n  >> {feedback}")
         print("-" * 20)
 
     print("\n=== TEST ENDE ===")

@@ -17,6 +17,7 @@ from .UserInput import UserInput
 
 
 class FeedbackEngine:
+    """"""
 
 
     def __init__(self, solver: 'BucketElimination'):
@@ -30,7 +31,7 @@ class FeedbackEngine:
 
     def generate_feedback(self, variable: Symbol, student_input: UserInput) -> str:
         """
-        Hauptmethode: Vergleicht Eingabe mit Lösung und generiert Feedback.
+        Hauptmethode: Vergleicht Eingabe mit Lösung und generiert Rückmeldungen.
         """
 
         solutions = self.correct_solution
@@ -43,19 +44,19 @@ class FeedbackEngine:
         # Eingabe in booleans oder 'None' transformieren
         student_val = student_input.to_bool_or_none()
 
-        # Fall A: Student hat recht
+        # Fall A: Nutzer hat recht
         if student_val == correct_val:
             return "Korrekt! Deine Schlussfolgerung stimmt exakt mit den logischen Regeln überein."
 
-        # Fall B: Student legt sich fest, obwohl es 'Unbekannt' ist
+        # Fall B: Nutzer legt sich fest, obwohl es 'Unbekannt' ist
         if correct_val is None and student_val is not None:
             return self._explain_unnecessary_assumption(variable, student_val)
 
-        # Fall C: Student sagt 'Unbekannt', aber es ist festgelegt 
+        # Fall C: Nutzer sagt 'Unbekannt', aber es ist festgelegt 
         if correct_val is not None and student_val is None:
              return f"Nicht ganz. Aus den Regeln lässt sich zwingend herleiten, dass {variable} {self._fmt(correct_val)} sein muss."
 
-        # Fall D: Student sagt Wahr, ist aber Falsch
+        # Fall D: Nutzer legt sich auf einen Wahrheitswert fest, aber nur der gegenteile Wert erfüllt die Prämisse(n) 
         if correct_val != student_val:
             return f"Das stimmt nicht. Die Regeln erzwingen, dass {variable} {self._fmt(correct_val)} ist (und nicht {self._fmt(student_val)})."
 
@@ -117,7 +118,7 @@ class FeedbackEngine:
         deletion_order = list(self.solver.task.variables)
         
         for var in reversed(deletion_order):
-            # Wenn die Variable schon im Szenario vorhanden (z.B. unsere target_var), überspringen
+
             if var in scenario:
                 continue
                 
@@ -157,7 +158,7 @@ class FeedbackEngine:
 
     def _fmt(self, val: bool) -> str:
         """
-        Kleiner Helfer für schöne Textausgabe
+        Helferfunktion für Textausgabe
         """
 
         return "Wahr" if val else "Falsch"
