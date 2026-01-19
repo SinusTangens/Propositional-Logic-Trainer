@@ -6,7 +6,7 @@ from typing import List, Tuple, Sequence, Dict, Optional, Set, Any
 from itertools import product
 from collections import deque
 
-from Task import Task, TaskType, DifficultySpec, DIFFICULTY_CONFIG
+from .Task import Task, TaskType, DifficultySpec, DIFFICULTY_CONFIG
 
 from sympy import symbols, Symbol
 from sympy.logic.boolalg import (
@@ -146,7 +146,7 @@ def wrap_if_needed(expr):
 
 
 
-def _premises_connectivity_summary(premises: List[Boolean]) -> Tuple[bool, bool]:
+def premises_connectivity_summary(premises: List[Boolean]) -> Tuple[bool, bool]:
     """
     Prüft, ob die Prämissen einen zusammenhängenden Graphen bilden. Nur zusammenhängende Prämissen bilden eine didaktisch sinnvolle Aufgabe. 
     Eine Kante existiert zwischen Pi und Pj, wenn sie gemeinsame Variablen nutzen.
@@ -371,7 +371,7 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, found_edge = _premises_connectivity_summary(premises)
+    is_connected, found_edge = premises_connectivity_summary(premises)
     if not is_connected or not found_edge:
         return False
     
@@ -417,7 +417,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Lösbarkeit durch eine simulierte Fallunterscheidung prüfen
-    # Es muss mindestens EINE Variable exisitieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
+    # Es müssen mindestens ZWEI Variable exisitieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
     split_useful_count = 0
     
     for v in used_vars:
@@ -449,7 +449,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Alle Prämissen sollen eine zusammenhängende Aufgabe bilden und nicht unabhängig voneinander existieren
-    is_connected, found_edge = _premises_connectivity_summary(premises)
+    is_connected, found_edge = premises_connectivity_summary(premises)
     if not is_connected or not found_edge:
         return False
 
@@ -460,10 +460,13 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
 class TaskGenerator:
-
+    """
+    Klasse für die Erstellung eines Aufgabengenerators auf Basis vordefinierter Regeln
+    """
 
     def __init__(self, config: Dict[Tuple[TaskType, int], DifficultySpec]):
         self.config = config
+
 
     def generate_task(self, task_type: TaskType, level: int) -> Task:
 
@@ -480,7 +483,7 @@ class TaskGenerator:
 
         # Erzeugungsloop, bis passende Aufgabe gefunden wurde
         # Anzahl an Iterationen frei gewählt
-        for attempt in range(20000):
+        for _ in range(20000):
             num_premises = random.randint(*spec.num_premises_range)
             premises = [
                 random_formula(vars, spec.max_depth, spec.allowed_ops, spec.op_weights)
@@ -509,23 +512,23 @@ class TaskGenerator:
 
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    generator = TaskGenerator(DIFFICULTY_CONFIG)
+#     generator = TaskGenerator(DIFFICULTY_CONFIG)
 
-    task = generator.generate_task(TaskType.CASE_SPLIT, 3)
-    print(f"Typ {task.task_type} – Level {task.level}")
-    print("Variablen:", task.variables)
-    print("Prämissen:")
-    for p_enum, p in enumerate(task.premises, start=1):
-        print(f"(P{p_enum})", print_logical_pretty(p))
+#     task = generator.generate_task(TaskType.DIRECT_INFERENCE, 2)
+#     print(f"Typ {task.task_type} – Level {task.level}")
+#     print("Variablen:", task.variables)
+#     print("Prämissen:")
+#     for p_enum, p in enumerate(task.premises, start=1):
+#         print(f"(P{p_enum})", print_logical_pretty(p))
 
-    solutions = all_models(task.premises, task.variables)
+#     solutions = all_models(task.premises, task.variables)
 
-    print("\nLösung(en):")
-    for solution in solutions:
-        print(solution)
+#     print("\nLösung(en):")
+#     for solution in solutions:
+#         print(solution)
 
-    closure = deductive_literal_closure(task.premises, task.variables)
-    print(f"\n Variablen, auf die man direkt schließen kann: {closure}")
+#     closure = deductive_literal_closure(task.premises, task.variables)
+#     print(f"\n Variablen, auf die man direkt schließen kann: {closure}")
     
