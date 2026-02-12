@@ -1,23 +1,19 @@
-import os
-import sys
-from typing import Dict, Any, Optional
+from typing import Dict
 from sympy import Symbol
 
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-app_dir = os.path.dirname(current_dir)
-if app_dir not in sys.path:
-    sys.path.append(app_dir)
-
-from solver.MarginalSolver import BucketElimination
-from solver.BooleanTable import BooleanTable
-from .UserInput import UserInput
-
+from core.logic_engine.solver.MarginalSolver import BucketElimination
+from core.logic_engine.solver.BooleanTable import BooleanTable
+from core.logic_engine.feedback.UserInput import UserInput
 
 
 
 class FeedbackEngine:
-    """"""
+    """
+    Nimmt ein solver-Objekt und generiert auf Basis der Lösung und der Nutzereingabe differenziertes Feedback.
+     - Vergleicht die Nutzereingabe mit der korrekten Lösung (True/False/Unbekannt)
+     - Generiert spezifische Rückmeldungen für verschiedene Fehlerarten (z.B. unnötige Annahmen, falsche Schlussfolgerungen)
+     - Nutzt Gegenbeispiele, um Missverständnisse zu verdeutlichen
+    """
 
 
     def __init__(self, solver: 'BucketElimination'):

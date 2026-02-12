@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prop-logic-trainer"
+version = "0.1.0"
+description = "A propositional logic training webapp"
+authors = [{name = "Sinan Kammerer"}]
+requires-python = "==3.11.9"
+dependencies = [
+    "Django>=4.2.10",
+    "djangorestframework>=0.1.0",
+    "django-cors-headers>=4.3.0",
+    "sympy>=1.12",
+    "numpy>=1.26.4",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+    "gunicorn>=21.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-django>=4.7.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0"
+]
+
+[tool.setuptools]
+packages = ["core", "apps"]

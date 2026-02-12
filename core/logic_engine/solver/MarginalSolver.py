@@ -1,22 +1,10 @@
-import sys
-import os
-
-
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-logic_engine_dir = os.path.dirname(current_dir)
-app_dir = os.path.dirname(logic_engine_dir)
-if app_dir not in sys.path:
-    sys.path.append(app_dir)
-
-from task_generator.Task import Task, TaskType
-from logic_engine.solver.BooleanTable import BooleanTable
-
 from typing import List, Dict, Any, Tuple, Optional
 import itertools
 import numpy as np
-from sympy import Symbol, symbols, Not, Or, And
+from sympy import Symbol
 
+from core.task_generator.Task import Task
+from core.logic_engine.solver.BooleanTable import BooleanTable
 
 
 

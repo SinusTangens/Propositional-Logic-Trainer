@@ -8,11 +8,11 @@ backend_dir = os.path.dirname(current_dir)
 if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
-from app.task_generator.generate_tasks import TaskGenerator, print_logical_pretty
-from app.task_generator.Task import TaskType, DIFFICULTY_CONFIG
-from app.logic_engine.solver.MarginalSolver import BucketElimination
-from app.logic_engine.feedback.FeedbackEngine import FeedbackEngine
-from app.logic_engine.feedback.UserInput import UserInput
+from core.task_generator.generate_tasks import TaskGenerator, print_logical_pretty
+from core.task_generator.Task import TaskType, DIFFICULTY_CONFIG
+from core.logic_engine.solver.MarginalSolver import BucketElimination
+from core.logic_engine.feedback.FeedbackEngine import FeedbackEngine
+from core.logic_engine.feedback.UserInput import UserInput
 
 
 
