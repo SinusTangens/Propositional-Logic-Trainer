@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+
+/* Custom Tailwind utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

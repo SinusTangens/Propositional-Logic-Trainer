@@ -10,6 +10,13 @@ class TaskType(Enum):
     CASE_SPLIT = "Durchführung einer initialen Fallunterscheidung, um alle Variablenbelegungen auf Basis vieler Prämissen zu bestimmen"       
 
 
+# Anzeigenamen für die TaskTypes (für UI)
+TASK_TYPE_DISPLAY_NAMES = {
+    TaskType.DIRECT_INFERENCE: "Unit Propagation",
+    TaskType.CASE_SPLIT: "Case Split",
+}
+
+
 @dataclass
 class Task:
     task_type: TaskType
@@ -89,3 +96,28 @@ DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
         op_weights={"not": 0.75, "or": 1.0, "imp": 1.0, "xor": 0.75, "and": 1.0, "equiv": 0.75},
     ),
 }
+
+
+# ============================================================================
+# ABGELEITETE KONFIGURATIONEN (automatisch aus DIFFICULTY_CONFIG berechnet)
+# ============================================================================
+
+def get_levels_for_task_type(task_type: TaskType) -> List[int]:
+    """Gibt alle verfügbaren Levels für einen TaskType zurück."""
+    return sorted([level for (tt, level) in DIFFICULTY_CONFIG.keys() if tt == task_type])
+
+
+def get_max_level(task_type: TaskType) -> int:
+    """Gibt das höchste Level für einen TaskType zurück."""
+    levels = get_levels_for_task_type(task_type)
+    return max(levels) if levels else 1
+
+
+def get_all_task_types() -> List[TaskType]:
+    """Gibt alle TaskTypes zurück, die in DIFFICULTY_CONFIG definiert sind."""
+    return list(set(tt for (tt, _) in DIFFICULTY_CONFIG.keys()))
+
+
+def get_total_levels() -> int:
+    """Gibt die Gesamtanzahl aller Levels über alle TaskTypes zurück."""
+    return sum(get_max_level(tt) for tt in get_all_task_types())

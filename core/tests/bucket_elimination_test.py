@@ -141,8 +141,6 @@ def test_tautology_handling():
     solver = BucketElimination(task)
     solution = solver.get_solution()
     
-
-    
     verify_solution_against_sympy(premises, solution, solver.final_consistency)
 
 

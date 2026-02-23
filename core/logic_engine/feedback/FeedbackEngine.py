@@ -50,11 +50,11 @@ class FeedbackEngine:
 
         # Fall C: Nutzer sagt 'Unbekannt', aber es ist festgelegt 
         if correct_val is not None and student_val is None:
-             return f"Nicht ganz. Aus den Regeln lässt sich zwingend herleiten, dass {variable} {self._fmt(correct_val)} sein muss."
+             return f"Aus den Regeln lässt sich zwingend herleiten, dass {variable} {self._fmt(correct_val)} sein muss."
 
         # Fall D: Nutzer legt sich auf einen Wahrheitswert fest, aber nur der gegenteile Wert erfüllt die Prämisse(n) 
         if correct_val != student_val:
-            return f"Das stimmt nicht. Die Regeln erzwingen, dass {variable} {self._fmt(correct_val)} ist (und nicht {self._fmt(student_val)})."
+            return f"Die Regeln erzwingen, dass {variable} {self._fmt(correct_val)} ist (und nicht {self._fmt(student_val)})."
 
         return "Unbekannter Fehler."
 
@@ -78,8 +78,8 @@ class FeedbackEngine:
 
 
         text = (
-            f"Du hast angegeben, dass **{variable} zwingend {self._fmt(student_assertion)}** sein muss.\n"
-            f"Das stimmt aber nicht. Es ist logisch möglich, dass **{variable} {self._fmt(counter_val)}** ist, "
+            f"Du hast angegeben, dass {variable} zwingend {self._fmt(student_assertion)} sein muss.\n"
+            f"Das stimmt aber nicht. Es ist logisch möglich, dass {variable} {self._fmt(counter_val)} ist, "
             f"ohne dass irgendeine Regel verletzt wird.\n\n"
             f"Hier ist ein mögliches Szenario als Beweis:\n"
         )

@@ -15,8 +15,26 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include, re_path
+from django.views.generic import TemplateView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # API URLs
+    path('api/', include('apps.generate_tasks.urls')),
+    path('api/', include('apps.users.urls')),
+    path('api/', include('apps.solve_tasks.urls')),
+    # Weitere API-Apps hier hinzufügen:
+    # path('api/', include('apps.feedback.urls')),
+    
+    # React Frontend (Production Mode)
+    # Alle anderen URLs werden an React Router weitergeleitet
+    re_path(r'^.*$', TemplateView.as_view(template_name='index.html'), name='frontend'),
 ]
+
+# Serve static files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
