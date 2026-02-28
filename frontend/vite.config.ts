@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: '/static/',  // Für Django Production: Assets unter /static/
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

@@ -1,9 +1,12 @@
 import { User, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { hkaLogo } from '../assets';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Referenzen() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
   const handleAccountClick = () => {
     navigate('/account');
@@ -13,14 +16,18 @@ export default function Referenzen() {
     <div className="min-h-screen bg-white">
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-          <img src="/hka-logo.jpg" alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-48 w-auto object-contain" />
+          <img src={hkaLogo} alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-48 w-auto object-contain" />
         </div>
         
-          <Button 
-            onClick={handleAccountClick}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white border-none px-5 py-3 text-base"
-          >
-          <User className="w-4 h-4" />
+<Button 
+          onClick={handleAccountClick}
+          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white border-none px-5 py-3 text-base"
+        >
+          {isAuthenticated && user?.avatar?.url ? (
+            <img src={user.avatar.url} alt="Avatar" className="w-6 h-6 rounded-full" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
           Account
         </Button>
       </header>

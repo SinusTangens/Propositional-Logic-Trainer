@@ -22,4 +22,6 @@ black>=23.0.0
 flake8>=6.0.0
 
 # Production
-gunicorn>=21.0.0
+gunicorn>=21.0.0  # Linux/Unix
+waitress>=3.0.0   # Windows-kompatibler WSGI-Server
+whitenoise>=6.6.0  # Statische Dateien in Production

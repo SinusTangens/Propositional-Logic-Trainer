@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { User, ArrowLeft, Flag, BookOpen, CheckCircle2, Lock, LogIn, Play, HelpCircle, X, Check, Info } from 'lucide-react';
+import { hkaLogo } from '../assets';
 import { Button } from '../components/ui/button';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import CelebrationModal from '../components/CelebrationModal';
 import { 
   generateTask, 
   solveTask, 
@@ -124,6 +126,11 @@ export default function Lernpfad() {
   const [showFeedback, setShowFeedback] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   
+  // Celebration-Modal Zustände
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<'type' | 'all'>('type');
+  const [completedTaskTypeName, setCompletedTaskTypeName] = useState<string>('');
+  
   // Progress aus User-Daten
   const progress = user?.progress || [];
   const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
@@ -215,11 +222,29 @@ export default function Lernpfad() {
 
   // Nächste Aufgabe
   const handleNextTask = () => {
-    if (solveResult?.progress?.level_up) {
-      // Level Up - zurück zur Pfad-Ansicht
+    if (solveResult?.progress?.type_completed) {
+      // Typ abgeschlossen - prüfe ob gesamter Lernpfad fertig
+      const typeName = currentTaskType === 'DIRECT_INFERENCE' ? 'Unit Propagation' : 'Case Split';
+      setCompletedTaskTypeName(typeName);
+      
+      // Prüfe ob der gesamte Lernpfad jetzt abgeschlossen ist
+      // Nach Case Split Abschluss UND Unit Prop war schon fertig
+      const updatedProgress = solveResult.user_progress || [];
+      const updatedUnitProp = updatedProgress.find(p => p.task_type === 'DIRECT_INFERENCE');
+      const updatedCaseSplit = updatedProgress.find(p => p.task_type === 'CASE_SPLIT');
+      
+      const allCompleted = updatedUnitProp?.isCompleted && updatedCaseSplit?.isCompleted;
+      
+      if (allCompleted) {
+        setCelebrationType('all');
+      } else {
+        setCelebrationType('type');
+      }
+      
+      setShowCelebration(true);
       setViewState('path');
-    } else if (solveResult?.progress?.type_completed) {
-      // Typ abgeschlossen - zurück zur Pfad-Ansicht
+    } else if (solveResult?.progress?.level_up) {
+      // Level Up - zurück zur Pfad-Ansicht
       setViewState('path');
     } else {
       // Nächste Aufgabe im selben Level
@@ -245,16 +270,20 @@ export default function Lernpfad() {
         {/* Header */}
         <header className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/hka-logo.jpg" alt="Hochschule Karlsruhe" className="h-48 w-auto object-contain" />
+            <img src={hkaLogo} alt="Hochschule Karlsruhe" className="h-48 w-auto object-contain" />
           </div>
           
-          <Button 
+<Button 
             onClick={handleAuthClick}
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white border-none px-5 py-3 text-base"
           >
             {isAuthenticated ? (
               <>
-                <User className="w-4 h-4" />
+                {user?.avatar?.url ? (
+                  <img src={user.avatar.url} alt="Avatar" className="w-6 h-6 rounded-full" />
+                ) : (
+                  <User className="w-4 h-4" />
+                )}
                 Account
               </>
             ) : (
@@ -289,8 +318,9 @@ export default function Lernpfad() {
                   Klicke auf einen <strong>hüpfenden Checkpoint</strong>, um zu beginnen.
                 </p>
                 <p className="text-gray-600 text-sm">
-                  <strong>Tipp:</strong> Du musst mehrere Aufgaben in Folge richtig lösen, um das nächste Level freizuschalten.
-                  Besuche die <a href="/grundlagen" className="text-red-600 hover:underline">Grundlagen</a>-Seite für eine Einführung.
+                  <strong>Tipp:</strong> Du musst  mehrere Aufgaben in Folge richtig lösen, um das nächste Level freizuschalten.
+                  Besuche die <a href="/grundlagen" className="text-red-600 hover:underline">Grundlagen</a>-Seite für eine Einführung
+                  oder die <a href="/referenzen" className="text-red-600 hover:underline">Referenzen</a> für Vorlesungsmaterial.
                 </p>
               </div>
             </div>
@@ -450,6 +480,23 @@ export default function Lernpfad() {
             </Button>
           </div>
         </main>
+        
+        {/* Celebration Modal */}
+        <CelebrationModal
+          isOpen={showCelebration}
+          onClose={() => setShowCelebration(false)}
+          avatarUrl={user?.avatar?.url}
+          title={celebrationType === 'all' 
+            ? '🎉 Lernpfad abgeschlossen!' 
+            : `🏆 ${completedTaskTypeName} gemeistert!`
+          }
+          message={celebrationType === 'all'
+            ? 'Fantastisch! Du hast den gesamten Lernpfad erfolgreich abgeschlossen und bist jetzt bereit für das Freie Üben!'
+            : `Großartig! Du hast alle Level von ${completedTaskTypeName} erfolgreich abgeschlossen. Mach weiter so!`
+          }
+          showFreiesUebenHint={celebrationType === 'all'}
+          onNavigateToFreiesUeben={() => navigate('/freies-ueben')}
+        />
       </div>
     );
   }
@@ -462,14 +509,18 @@ export default function Lernpfad() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-          <img src="/hka-logo.jpg" alt="Hochschule Karlsruhe" className="h-48 w-auto object-contain" />
+          <img src={hkaLogo} alt="Hochschule Karlsruhe" className="h-48 w-auto object-contain" />
         </div>
         
-        <Button 
+<Button 
           onClick={handleAuthClick}
           className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white border-none px-5 py-3 text-base"
         >
-          <User className="w-4 h-4" />
+          {user?.avatar?.url ? (
+            <img src={user.avatar.url} alt="Avatar" className="w-6 h-6 rounded-full" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
           Account
         </Button>
       </header>

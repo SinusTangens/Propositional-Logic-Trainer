@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import SessionAuthentication
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout, get_user_model, update_session_auth_hash
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 
@@ -119,8 +119,8 @@ class PasswordChangeView(APIView):
                 )
             user.set_password(serializer.validated_data['new_password'])
             user.save()
-            # Session aktualisieren damit der User eingeloggt bleibt
-            login(request, user)
+            # Session aktualisieren damit der User eingeloggt bleibt (schneller als login())
+            update_session_auth_hash(request, user)
             return Response({'message': 'Passwort erfolgreich geändert'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -133,10 +133,11 @@ class ResetProgressView(APIView):
     def post(self, request):
         user = request.user
         
-        # Statistiken zurücksetzen
+        # Alle Statistiken zurücksetzen (inklusive Highscore)
         user.total_solved = 0
         user.correct_solved = 0
-        # highscore_streak bleibt als "All-Time-High"
+        user.current_streak = 0
+        user.highscore_streak = 0
         user.save()
         
         # Progress zurücksetzen

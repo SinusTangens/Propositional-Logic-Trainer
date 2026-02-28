@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Shuffle, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
-import { AvatarSettings, updateAvatar, randomizeAvatar } from '../services/api';
+import { AvatarSettings, updateAvatar } from '../services/api';
 
 interface AvatarEditorProps {
   isOpen: boolean;
@@ -270,28 +270,26 @@ export default function AvatarEditor({ isOpen, onClose, currentAvatar, onAvatarU
     setError(null);
   };
 
-  const handleRandomize = async () => {
-    setLoading(true);
-    setError(null);
-    const result = await randomizeAvatar();
-    setLoading(false);
+  const handleRandomize = () => {
+    // Client-seitige Randomisierung - nur Vorschau, kein Speichern
+    const getRandomOption = (options: readonly { value: string }[]) => {
+      const randomIndex = Math.floor(Math.random() * options.length);
+      return options[randomIndex].value;
+    };
     
-    if (result.data) {
-      const newAvatar = result.data.avatar;
-      setAvatar({
-        skinColor: newAvatar.skinColor,
-        hairColor: newAvatar.hairColor,
-        top: newAvatar.top,
-        accessories: newAvatar.accessories,
-        facialHair: newAvatar.facialHair,
-        clothing: newAvatar.clothing,
-        clothingColor: newAvatar.clothingColor,
-        eyes: newAvatar.eyes,
-        eyebrows: newAvatar.eyebrows,
-        mouth: newAvatar.mouth,
-      });
-      onAvatarUpdate(newAvatar);
-    }
+    setAvatar({
+      skinColor: getRandomOption(AVATAR_OPTIONS.skinColor.options),
+      hairColor: getRandomOption(AVATAR_OPTIONS.hairColor.options),
+      top: getRandomOption(AVATAR_OPTIONS.top.options),
+      accessories: getRandomOption(AVATAR_OPTIONS.accessories.options),
+      facialHair: getRandomOption(AVATAR_OPTIONS.facialHair.options),
+      clothing: getRandomOption(AVATAR_OPTIONS.clothing.options),
+      clothingColor: getRandomOption(AVATAR_OPTIONS.clothingColor.options),
+      eyes: getRandomOption(AVATAR_OPTIONS.eyes.options),
+      eyebrows: getRandomOption(AVATAR_OPTIONS.eyebrows.options),
+      mouth: getRandomOption(AVATAR_OPTIONS.mouth.options),
+    });
+    setError(null);
   };
 
   const handleSave = async () => {

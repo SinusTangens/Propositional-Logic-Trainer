@@ -484,7 +484,7 @@ class TaskGenerator:
 
         # Erzeugungsloop, bis passende Aufgabe gefunden wurde
         # Anzahl an Iterationen frei gewählt
-        for _ in range(20000):
+        for _ in range(50000):
             num_premises = random.randint(*spec.num_premises_range)
             premises = [
                 random_formula(vars, spec.max_depth, spec.allowed_ops, spec.op_weights)

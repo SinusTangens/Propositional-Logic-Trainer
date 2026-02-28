@@ -58,6 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
         return {
             'totalSolved': obj.total_solved,
             'correctSolved': obj.correct_solved,
+            'currentStreak': obj.current_streak,
             'highscoreStreak': obj.highscore_streak
         }
     
@@ -114,6 +115,8 @@ class PasswordChangeSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password2']:
             raise serializers.ValidationError({"new_password": "Die Passwörter stimmen nicht überein."})
+        if attrs['old_password'] == attrs['new_password']:
+            raise serializers.ValidationError({"new_password": "Das neue Passwort muss sich vom alten unterscheiden."})
         return attrs
 
 

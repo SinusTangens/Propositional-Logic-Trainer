@@ -22,12 +22,12 @@ LEVEL_CONFIG = {
     'DIRECT_INFERENCE': {
         1: 5,  # Level 1 → 5 richtige zum Aufstieg zu Level 2
         2: 5,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
-        3: 5,  # Level 3 → 5 richtige zum Aufstieg zu Level 4
-        4: 5,  # Level 4 → 5 richtige zum Abschluss
+        3: 3,  # Level 3 → 3 richtige zum Aufstieg zu Level 4
+        4: 2,  # Level 4 → 5 richtige zum Abschluss
     },
     'CASE_SPLIT': {
-        1: 1,  # Level 1 → 5 richtige zum Aufstieg zu Level 2
-        2: 1,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
+        1: 3,  # Level 1 → 5 richtige zum Aufstieg zu Level 2
+        2: 2,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
         3: 1,  # Level 3 → 5 richtige zum Abschluss
     },
 }
@@ -47,9 +47,10 @@ class User(AbstractUser):
     # Statistiken
     total_solved = models.IntegerField(default=0, help_text="Gesamtzahl gelöster Aufgaben")
     correct_solved = models.IntegerField(default=0, help_text="Anzahl korrekt gelöster Aufgaben")
+    current_streak = models.IntegerField(default=0, help_text="Aktuelle Streak (seitenübergreifend)")
     highscore_streak = models.IntegerField(default=0, help_text="Höchste Streak aller Zeiten")
     
-    # Avatar-Einstellungen für DiceBear Avataaars (Hex-Farben ohne #)
+    # Avatar-Einstellungen für DiceBear (Hex-Farben ohne #)
     avatar_skin_color = models.CharField(max_length=20, default='edb98a', help_text="Hautfarbe (Hex)")
     avatar_hair_color = models.CharField(max_length=20, default='2c1b18', help_text="Haarfarbe (Hex)")
     avatar_top = models.CharField(max_length=50, default='shortFlat', help_text="Frisur/Kopfbedeckung")

@@ -5,6 +5,7 @@ from sympy import srepr
 
 from .models import Task
 from .serializers import TaskSerializer
+from .services import task_pregeneration_service, TARGET_TASKS_PER_COMBINATION
 
 from core.task_generator.Task import TaskType, DIFFICULTY_CONFIG
 from core.task_generator.generate_tasks import TaskGenerator, print_logical_pretty
@@ -19,7 +20,8 @@ class TaskViewSet(viewsets.ModelViewSet):
     - POST   /api/tasks/           - Neue Task manuell erstellen
     - GET    /api/tasks/{id}/      - Einzelne Task abrufen
     - DELETE /api/tasks/{id}/      - Task löschen
-    - POST   /api/tasks/generate/  - Neue Task automatisch generieren
+    - POST   /api/tasks/generate/  - Vorgenerierte Task abrufen (oder on-demand generieren)
+    - GET    /api/tasks/pool_status/ - Status des Task-Pools
     """
     queryset = Task.objects.all().order_by('-created_at')
     serializer_class = TaskSerializer
@@ -27,7 +29,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def generate(self, request):
         """
-        Generiert eine neue Aufgabe basierend auf task_type und level.
+        Gibt eine vorgenerierte, ungelöste Task zurück.
+        
+        Verwendet den Pre-Generation-Pool für schnelle Antworten.
+        Fallback auf On-Demand-Generierung wenn Pool leer ist.
         
         Request Body:
         {
@@ -55,32 +60,52 @@ class TaskViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Task generieren
+        # Versuche vorgenerierte Task zu holen
+        db_task = task_pregeneration_service.get_random_unsolved_task(task_type_str, level)
+        
+        if db_task:
+            # Vorgenerierte Task gefunden → schnelle Antwort
+            serializer = self.get_serializer(db_task)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        # Fallback: On-Demand-Generierung (Pool ist leer)
         try:
-            generator = TaskGenerator(DIFFICULTY_CONFIG)
-            generated_task = generator.generate_task(task_type, level)
-        except RuntimeError as e:
+            db_task = task_pregeneration_service.generate_single_task(task_type, level)
+        except Exception as e:
             return Response(
-                {'error': str(e)},
+                {'error': f'Task-Generierung fehlgeschlagen: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Prämissen und Variablen in lesbare Strings umwandeln
-        premises_str = [print_logical_pretty(p) for p in generated_task.premises]
-        premises_sympy = [srepr(p) for p in generated_task.premises]  # SymPy-Repräsentation für fehlerfreies Parsen
-        variables_str = [str(v) for v in generated_task.variables]
-
-        # In Datenbank speichern
-        db_task = Task.objects.create(
-            task_type=task_type_str,
-            level=level,
-            premises=premises_str,
-            premises_sympy=premises_sympy,
-            variables=variables_str
-        )
-
         serializer = self.get_serializer(db_task)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'])
+    def pool_status(self, request):
+        """
+        Gibt den Status des Task-Pools zurück.
+        
+        Response:
+        {
+            "target_per_combination": 200,
+            "combinations": [
+                {"task_type": "DIRECT_INFERENCE", "level": 1, "unsolved_count": 200, ...},
+                ...
+            ],
+            "total_unsolved": 1400,
+            "total_target": 1400
+        }
+        """
+        status_list = task_pregeneration_service.get_all_combinations_status()
+        total_unsolved = sum(s['unsolved_count'] for s in status_list)
+        total_target = sum(s['target'] for s in status_list)
+        
+        return Response({
+            'target_per_combination': TARGET_TASKS_PER_COMBINATION,
+            'combinations': status_list,
+            'total_unsolved': total_unsolved,
+            'total_target': total_target
+        })
 
     @action(detail=False, methods=['get'])
     def by_type(self, request):

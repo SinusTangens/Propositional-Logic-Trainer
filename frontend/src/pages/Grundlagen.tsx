@@ -1,9 +1,12 @@
 import { User, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { hkaLogo, unitPropExample, caseSplitExample } from '../assets';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Grundlagen() {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
   const handleAccountClick = () => {
     navigate('/account');
@@ -14,14 +17,18 @@ export default function Grundlagen() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-          <img src="/hka-logo.jpg" alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-48 w-auto object-contain" />
+          <img src={hkaLogo} alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-48 w-auto object-contain" />
         </div>
         
-        <Button 
+<Button 
           onClick={handleAccountClick}
           className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white border-none px-5 py-3 text-base"
         >
-          <User className="w-4 h-4" />
+          {isAuthenticated && user?.avatar?.url ? (
+            <img src={user.avatar.url} alt="Avatar" className="w-6 h-6 rounded-full" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
           Account
         </Button>
       </header>
@@ -103,6 +110,136 @@ export default function Grundlagen() {
           </div>
         </section>
 
+        {/* Umformungsregeln Section */}
+        <section className="mb-16">
+          <h2 className="text-3xl mb-6 text-red-600">Umformungsregeln</h2>
+          
+          <p className="text-lg text-gray-700 mb-8">
+            Diese Regeln ermöglichen es, logische Ausdrücke in äquivalente Formen umzuwandeln. 
+            Das ≡ Symbol bedeutet "ist logisch äquivalent zu".
+          </p>
+
+          <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-lg">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-6 py-3 text-left text-lg w-1/4">Regel</th>
+                  <th className="border border-gray-300 px-6 py-3 text-left text-lg w-2/5">Formel</th>
+                  <th className="border border-gray-300 px-6 py-3 text-left text-lg">Erklärung</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">De Morgan</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    ¬(A ∧ B) ≡ ¬A ∨ ¬B<br/>
+                    ¬(A ∨ B) ≡ ¬A ∧ ¬B
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Negation einer Verknüpfung: AND wird zu OR und umgekehrt
+                  </td>
+                </tr>
+                <tr className="bg-gray-50">
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Implikation auflösen</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A → B ≡ ¬A ∨ B
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Eine Implikation kann als Disjunktion geschrieben werden
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Kontraposition</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A → B ≡ ¬B → ¬A
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    "Wenn A dann B" ist gleich "Wenn nicht B dann nicht A"
+                  </td>
+                </tr>
+                <tr className="bg-gray-50">
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Doppelte Negation</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    ¬¬A ≡ A
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Zwei Negationen heben sich auf
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Äquivalenz auflösen</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ↔ B ≡ (A → B) ∧ (B → A)
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Äquivalenz als zwei Implikationen
+                  </td>
+                </tr>
+                <tr className="bg-gray-50">
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Komplementgesetz</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ∧ ¬A ≡ 0 (falsch)<br/>
+                    A ∨ ¬A ≡ 1 (wahr)
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Widerspruch erkennen! Eine Aussage kann nicht gleichzeitig wahr und falsch sein.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Dominantes Element</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ∧ 0 ≡ 0<br/>
+                    A ∨ 1 ≡ 1
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    AND mit falsch ist immer falsch, OR mit wahr ist immer wahr
+                  </td>
+                </tr>
+                <tr className="bg-gray-50">
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Neutrales Element</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ∧ 1 ≡ A<br/>
+                    A ∨ 0 ≡ A
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    AND mit wahr bzw. OR mit falsch ändert nichts
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Absorption</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ∧ (A ∨ B) ≡ A<br/>
+                    A ∨ (A ∧ B) ≡ A
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Redundante Terme können entfernt werden
+                  </td>
+                </tr>
+                <tr className="bg-gray-50">
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Distributivgesetz</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ∧ (B ∨ C) ≡ (A ∧ B) ∨ (A ∧ C)<br/>
+                    A ∨ (B ∧ C) ≡ (A ∨ B) ∧ (A ∨ C)
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Ausmultiplizieren und Ausklammern
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-semibold text-lg">Idempotenz</td>
+                  <td className="border border-gray-300 px-6 py-4 font-mono text-lg">
+                    A ∧ A ≡ A<br/>
+                    A ∨ A ≡ A
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-gray-700">
+                    Doppelte Terme können zusammengefasst werden
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {/* Unit Propagation Section */}
         <section className="mb-16">
           <h2 className="text-3xl mb-6 text-red-600">Aufgabentyp: Unit Propagation</h2>
@@ -121,7 +258,7 @@ export default function Grundlagen() {
             <h3 className="text-2xl mb-6 font-semibold">Beispiel</h3>
             
             <div className="mb-8 flex justify-center">
-              <img src="/unit-prop-example.png" alt="Unit Propagation Beispiel" className="max-w-md" />
+              <img src={unitPropExample} alt="Unit Propagation Beispiel" className="max-w-md" />
             </div>
 
             <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6">
@@ -176,7 +313,7 @@ export default function Grundlagen() {
             <h3 className="text-2xl mb-6 font-semibold">Beispiel</h3>
             
             <div className="mb-8 flex justify-center">
-              <img src="/case-split-example.png" alt="Case Split Beispiel" className="max-w-2xl" />
+              <img src={caseSplitExample} alt="Case Split Beispiel" className="max-w-2xl" />
             </div>
 
             <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6">

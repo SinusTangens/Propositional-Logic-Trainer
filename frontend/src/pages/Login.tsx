@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import { hkaLogo } from '../assets';
 import { useAuth } from '../contexts/AuthContext';
 import { LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 
@@ -79,7 +80,7 @@ export default function Login() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-center items-center">
         <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-          <img src="/hka-logo.jpg" alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-32 w-auto object-contain" />
+          <img src={hkaLogo} alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-32 w-auto object-contain" />
         </div>
       </header>
 
@@ -123,7 +124,7 @@ export default function Login() {
               <>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Hochschul-Mail
+                    E-Mail
                   </label>
                   <input
                     type="email"

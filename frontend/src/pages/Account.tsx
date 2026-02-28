@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { User, ArrowLeft, LogOut, Lock, Trophy, Target, TrendingUp, Mail, KeyRound, RotateCcw, Pencil } from 'lucide-react';
+import { User, ArrowLeft, LogOut, Lock, Trophy, Target, TrendingUp, Flame, Mail, KeyRound, RotateCcw, Pencil, Eye, EyeOff } from 'lucide-react';
+import { hkaLogo } from '../assets';
 import { Button } from '../components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +19,11 @@ export default function Account() {
   });
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    old: false,
+    new: false,
+    confirm: false,
+  });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   if (!isAuthenticated || !user) {
@@ -26,7 +32,7 @@ export default function Account() {
   }
 
   const progress = user.progress || [];
-  const stats = user.stats || { totalSolved: 0, correctSolved: 0, highscoreStreak: 0 };
+  const stats = user.stats || { totalSolved: 0, correctSolved: 0, currentStreak: 0, highscoreStreak: 0 };
 
   // Finde Unit Propagation und Case Split Progress
   const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
@@ -85,6 +91,11 @@ export default function Account() {
       return;
     }
 
+    if (passwordForm.oldPassword === passwordForm.newPassword) {
+      setPasswordError('Das neue Passwort muss sich vom alten unterscheiden');
+      return;
+    }
+
     const result = await changePassword(
       passwordForm.oldPassword,
       passwordForm.newPassword,
@@ -94,6 +105,7 @@ export default function Account() {
     if (result.data) {
       setPasswordSuccess(true);
       setPasswordForm({ oldPassword: '', newPassword: '', newPassword2: '' });
+      setShowPassword({ old: false, new: false, confirm: false });
       setTimeout(() => {
         setShowPasswordModal(false);
         setPasswordSuccess(false);
@@ -135,14 +147,18 @@ export default function Account() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-          <img src="/hka-logo.jpg" alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-48 w-auto object-contain" />
+          <img src={hkaLogo} alt="Hochschule Karlsruhe - University of Applied Sciences" className="h-48 w-auto object-contain" />
         </div>
         
-        <Button 
+<Button 
           onClick={() => navigate('/account')}
           className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white border-none px-5 py-3 text-base"
         >
-          <User className="w-4 h-4" />
+          {currentAvatarUrl ? (
+            <img src={currentAvatarUrl} alt="Avatar" className="w-6 h-6 rounded-full" />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
           Account
         </Button>
       </header>
@@ -192,7 +208,7 @@ export default function Account() {
               </div>
               
               <div>
-                <label className="text-lg font-semibold text-gray-700">Hochschulmail</label>
+                <label className="text-lg font-semibold text-gray-700">E-Mail</label>
                 <div className="flex items-center gap-2 mt-1">
                   <Mail className="w-5 h-5 text-gray-600" />
                   <p className="text-xl">{user.email}</p>
@@ -394,13 +410,21 @@ export default function Account() {
         <section className="bg-white border border-gray-300 rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-3xl mb-6">Statistiken</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-300 rounded-lg p-6 text-center">
               <div className="flex justify-center mb-3">
                 <Target className="w-12 h-12 text-green-600" />
               </div>
               <p className="text-sm text-gray-600 mb-2">Korrekt gelöste Aufgaben</p>
               <p className="text-4xl font-bold text-green-700">{stats.correctSolved}</p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-300 rounded-lg p-6 text-center">
+              <div className="flex justify-center mb-3">
+                <Flame className="w-12 h-12 text-orange-600" />
+              </div>
+              <p className="text-sm text-gray-600 mb-2">Aktuelle Streak</p>
+              <p className="text-4xl font-bold text-orange-700">{stats.currentStreak}</p>
             </div>
             
             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-300 rounded-lg p-6 text-center">
@@ -476,36 +500,63 @@ export default function Account() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Aktuelles Passwort
                 </label>
-                <input
-                  type="password"
-                  value={passwordForm.oldPassword}
-                  onChange={(e) => setPasswordForm(prev => ({ ...prev, oldPassword: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword.old ? "text" : "password"}
+                    value={passwordForm.oldPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, oldPassword: e.target.value }))}
+                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => ({ ...prev, old: !prev.old }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword.old ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Neues Passwort
                 </label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword.new ? "text" : "password"}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => ({ ...prev, new: !prev.new }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Neues Passwort bestätigen
                 </label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword2}
-                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword2: e.target.value }))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword.confirm ? "text" : "password"}
+                    value={passwordForm.newPassword2}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword2: e.target.value }))}
+                    className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => ({ ...prev, confirm: !prev.confirm }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -515,6 +566,7 @@ export default function Account() {
                   setShowPasswordModal(false);
                   setPasswordError(null);
                   setPasswordForm({ oldPassword: '', newPassword: '', newPassword2: '' });
+                  setShowPassword({ old: false, new: false, confirm: false });
                 }}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-black border-none"
               >

@@ -47,6 +47,24 @@ async function apiFetch<T>(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Handle DRF validation errors (field-based errors)
+      if (typeof errorData === 'object' && !errorData.error) {
+        const errorMessages: string[] = [];
+        for (const [field, messages] of Object.entries(errorData)) {
+          if (Array.isArray(messages)) {
+            // Map English error messages to German
+            const translatedMessages = messages.map(msg => translateErrorMessage(String(msg)));
+            errorMessages.push(`${getFieldLabel(field)}: ${translatedMessages.join(', ')}`);
+          } else if (typeof messages === 'string') {
+            errorMessages.push(`${getFieldLabel(field)}: ${translateErrorMessage(messages)}`);
+          }
+        }
+        if (errorMessages.length > 0) {
+          throw new Error(errorMessages.join('\n'));
+        }
+      }
+      
       throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
     }
 
@@ -56,6 +74,43 @@ async function apiFetch<T>(
     console.error('API Error:', error);
     return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
+}
+
+/**
+ * Translate common Django error messages to German
+ */
+function translateErrorMessage(msg: string): string {
+  const translations: Record<string, string> = {
+    'This password is too similar to the username.': 'Das Passwort ist dem Benutzernamen zu ähnlich.',
+    'This password is too short. It must contain at least 8 characters.': 'Das Passwort ist zu kurz. Es muss mindestens 8 Zeichen enthalten.',
+    'This password is too common.': 'Dieses Passwort ist zu häufig verwendet.',
+    'This password is entirely numeric.': 'Das Passwort darf nicht nur aus Zahlen bestehen.',
+    'A user with that username already exists.': 'Ein Benutzer mit diesem Benutzernamen existiert bereits.',
+    'user with this email already exists.': 'Ein Benutzer mit dieser E-Mail existiert bereits.',
+    'Enter a valid email address.': 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
+    'This field may not be blank.': 'Dieses Feld darf nicht leer sein.',
+    'This field is required.': 'Dieses Feld ist erforderlich.',
+    'The passwords do not match.': 'Die Passwörter stimmen nicht überein.',
+  };
+  
+  return translations[msg] || msg;
+}
+
+/**
+ * Get German field labels
+ */
+function getFieldLabel(field: string): string {
+  const labels: Record<string, string> = {
+    'username': 'Benutzername',
+    'email': 'E-Mail',
+    'password': 'Passwort',
+    'password2': 'Passwort bestätigen',
+    'first_name': 'Vorname',
+    'last_name': 'Nachname',
+    'non_field_errors': 'Fehler',
+  };
+  
+  return labels[field] || field;
 }
 
 // ============================================================
@@ -76,6 +131,7 @@ export interface LevelProgress {
 export interface UserStats {
   totalSolved: number;
   correctSolved: number;
+  currentStreak: number;
   highscoreStreak: number;
 }
 

@@ -73,12 +73,11 @@ Write-Host "Statische Dateien gesammelt" -ForegroundColor Green
 Write-Host ""
 
 # Start Django server
-Write-Host "Starte Django Server..." -ForegroundColor Cyan
+Write-Host "Starte Production Server (Waitress)..." -ForegroundColor Cyan
 Write-Host "   Server laeuft auf: http://localhost:8000" -ForegroundColor Green
-Write-Host "   API:               http://localhost:8000/api/" -ForegroundColor Green
-Write-Host "   Admin:             http://localhost:8000/admin/" -ForegroundColor Green
 Write-Host ""
 Write-Host "Druecke Strg+C zum Stoppen" -ForegroundColor Yellow
 Write-Host ""
 
-python manage.py runserver
+# Waitress als Production-WSGI-Server (Windows-kompatibel)
+python -m waitress --host=127.0.0.1 --port=8000 logic_trainer.wsgi:application

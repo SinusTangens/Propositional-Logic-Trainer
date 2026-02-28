@@ -1,138 +1,109 @@
 # 🧠 Propositional Logic Trainer
 
-Interaktive Webapp zum Lernen und Üben von aussagenlogischen Inferenzverfahren.
+Eine interaktive Web-Anwendung zum Erlernen und Üben von aussagenlogischen Inferenzverfahren.
 
-**Technologie-Stack:**
-- **Backend:** Django 4.2 + Django REST Framework
-- **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
-- **Datenbank:** SQLite (Development) / PostgreSQL (Production)
+## Beschreibung
+
+Das Ziel dieser Arbeit ist die Konzeption und Umsetzung einer **digitalen Übungsplattform**, die Studierende beim Erlernen des logischen Schließens im Bereich der Aussagenlogik unterstützt. 
+
+Die Anwendung bietet:
+- **Automatisierte Aufgabengenerierung** - Unbegrenzte Übungsmöglichkeiten
+- **Sofortige Auswertung** - Direktes Feedback zu Lösungsversuchen
+- **Adaptive Schwierigkeit** - Anpassung an das individuelle Lernverhalten
+- **Lernfortschritttracking** - Sichtbarer Fortschritt zur Motivation
+- **Verschiedene Lösungsverfahren** - Unit Propagation, Case Split und mehr
 
 ---
 
 ## 📋 Inhaltsverzeichnis
 
-- [Architektur](#architektur)
-- [Installation](#installation)
-- [Development Workflow](#development-workflow)
-- [Production Deployment](#production-deployment)
-- [API Dokumentation](#api-dokumentation)
-- [Projektstruktur](#projektstruktur)
+- [Technologien](#-technologien)
+- [Projekt-Setup](#-projekt-setup)
+- [Server starten](#-server-starten)
+  - [Development Mode](#development-mode)
+  - [Production Mode](#production-mode)
+- [Architektur](#-architektur)
+- [Django Befehle](#-wichtige-django-befehle)
+- [Projektstruktur](#-projektstruktur)
+- [Weiterführende Dokumentation](#-weiterführende-dokumentation)
+- [License](#-license)
+- [Kontakt](#-kontakt)
 
 ---
 
-## 🏗️ Architektur
+## 🛠️ Technologien
 
-### Zwei Modi: Development vs. Production
+### Backend
+| Technologie | Version | Beschreibung |
+|-------------|---------|--------------|
+| Python | 3.11+ | Programmiersprache |
+| Django | 5.2 | Web-Framework |
+| Django REST Framework | 3.16 | REST API |
+| SymPy | 1.12+ | Symbolische Mathematik |
+| Waitress | 3.0+ | WSGI Server (Windows) |
+| Whitenoise | 6.6+ | Static File Serving |
+| pytest | 8.0+ | Testing Framework |
 
-```
-╔═══════════════════════════════════════════════════════════════╗
-║                   DEVELOPMENT MODE                            ║
-╠═══════════════════════════════════════════════════════════════╣
-║                                                               ║
-║  ┌─────────────────────┐         ┌──────────────────────┐   ║
-║  │  React Frontend     │   API   │  Django Backend      │   ║
-║  │  Port 3000          │ ◄─────► │  Port 8000           │   ║
-║  │  (Vite Hot Reload)  │  JSON   │  (REST API + Admin) │   ║
-║  └─────────────────────┘         └──────────────────────┘   ║
-║         npm run dev              python manage.py runserver  ║
-║                                                               ║
-║  ✅ Hot Reload - Änderungen sofort sichtbar                  ║
-║  ✅ Schnelle Entwicklung                                      ║
-║  ❌ 2 Terminal-Fenster nötig                                  ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
+### Frontend
+| Technologie | Version | Beschreibung |
+|-------------|---------|--------------|
+| React | 18.3 | UI Framework |
+| TypeScript | 5.7 | Type-safe JavaScript |
+| Vite | 6.3 | Build Tool & Dev Server |
+| Tailwind CSS | 4.0 | Utility-first CSS |
+| Radix UI | - | Accessible Components |
+| Lucide React | - | Icon Library |
 
-╔═══════════════════════════════════════════════════════════════╗
-║                   PRODUCTION MODE                             ║
-╠═══════════════════════════════════════════════════════════════╣
-║                                                               ║
-║         ┌────────────────────────────────────┐               ║
-║         │   Django Server (Port 8000)        │               ║
-║         │                                    │               ║
-║         │  ┌─ React SPA (statisch)          │               ║
-║         │  ├─ REST API (/api/)               │               ║
-║         │  ├─ Admin Panel (/admin/)          │               ║
-║         │  └─ Static Files                   │               ║
-║         └────────────────────────────────────┘               ║
-║                 python manage.py runserver                    ║
-║                                                               ║
-║  ✅ Ein Server - einfaches Deployment                         ║
-║  ✅ Realistische Produktionsumgebung                          ║
-║  ❌ Nach Frontend-Änderungen: npm run build nötig             ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
-```
+### Datenbank
+- **SQLite** - Development & Production (für Thesis ausreichend)
 
 ---
 
-## 💻 Installation
+## 💻 Projekt-Setup
 
 ### Voraussetzungen
 
-#### 1. Python 3.11+ (für Backend)
+#### 1. Python 3.11+
 ```powershell
-# Prüfen ob installiert:
 python --version
 ```
 
-#### 2. Node.js 18+ & npm (für Frontend)
-
-**Was ist Node.js?**  
-Node.js ist eine JavaScript-Laufzeitumgebung (ähnlich wie Python selbst).  
-Es wird **systemweit** installiert, **NICHT** in Python venv.
-
-**Installation (wähle eine Methode):**
+#### 2. Node.js 18+ & npm
+Node.js ist eine separate Laufzeitumgebung (nicht in Python venv installierbar).
 
 ```powershell
-# Methode 1: Manueller Download (EMPFOHLEN)
-# https://nodejs.org/ (LTS Version)
-# Installiere und starte Terminal neu
-
-# Methode 2: Windows Package Manager
-winget install OpenJS.NodeJS.LTS
-
-# Methode 3: Chocolatey (falls installiert)
-choco install nodejs-lts
+# Installation: https://nodejs.org/ (LTS Version)
+# Nach Installation:
+node --version
+npm --version
 ```
 
-**Nach Installation prüfen:**
-```powershell
-node --version   # Sollte v18.x.x oder höher anzeigen
-npm --version    # Sollte mit Node.js installiert sein
-```
-
-**Wichtig:** Node.js kann **nicht** in Python venv installiert werden - es ist eine eigene Laufzeit!
-
-#### 3. Git (für Version Control)
+#### 3. Git
 ```powershell
 git --version
 ```
 
----
-
-### 1️⃣ Repository klonen
+### Installation
 
 ```powershell
+# 1. Repository klonen
 git clone https://github.com/SinusTangens/Propositional-Logic-Trainer.git
 cd Propositional-Logic-Trainer
-```
 
-### 2️⃣ Backend Setup
+# 2. Python Virtual Environment erstellen
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 
-```powershell
-# Virtual Environment erstellen und aktivieren
-.\setup.sh
+# 3. Python Dependencies installieren
+pip install -r requirements.txt
 
-# Migrations durchführen
+# 4. Django Migrationen durchführen
 python manage.py migrate
 
-# Superuser erstellen (für /admin/)
+# 5. Superuser erstellen (für Admin-Panel)
 python manage.py createsuperuser
-```
 
-### 3️⃣ Frontend Setup
-
-```powershell
+# 6. Frontend Dependencies installieren
 cd frontend
 npm install
 cd ..
@@ -142,21 +113,18 @@ cd ..
 
 ---
 
-## 🚀 Development Workflow
+## 🚀 Server starten
 
-### Option 1: Automatisches Startup (EMPFOHLEN)
+### Development Mode
 
+**Empfohlen für Entwicklung** - Hot Reload, schnelle Iteration.
+
+#### Mit Script (empfohlen)
 ```powershell
-# Startet Frontend + Backend automatisch in separaten Fenstern
 .\scripts\start-dev.ps1
 ```
 
-Öffne dann:
-- **Frontend:** http://localhost:3000
-- **Backend Admin:** http://localhost:8000/admin/
-- **Backend API:** http://localhost:8000/api/
-
-### Option 2: Manuelles Startup
+#### Manuell (2 Terminals)
 
 **Terminal 1 - Backend:**
 ```powershell
@@ -170,92 +138,164 @@ cd frontend
 npm run dev
 ```
 
+**URLs:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000/api/
+- Admin Panel: http://localhost:8000/admin/
+
 ---
 
-## 🏭 Production Deployment
+### Production Mode
 
-### Option 1: Automatisches Build & Serve (EMPFOHLEN)
+**Empfohlen für Präsentation/Demo** - Ein Server, professionell.
 
+#### Mit Script (empfohlen)
 ```powershell
-# Baut Frontend und startet Django mit integriertem Frontend
 .\scripts\start-production.ps1
 ```
 
-Webapp läuft auf: **http://localhost:8000**
-
-### Option 2: Manuelle Schritte
-
+#### Manuell
 ```powershell
-# 1. Frontend bauen
+# 1. Virtual Environment aktivieren
+.\.venv\Scripts\Activate.ps1
+
+# 2. Frontend bauen
 cd frontend
-npm run build  # Erstellt frontend/dist/
+npm run build
 cd ..
 
-# 2. Django Static Files sammeln
-.\.venv\Scripts\Activate.ps1
+# 3. Static Files sammeln
 python manage.py collectstatic --noinput
 
-# 3. Server starten
-python manage.py runserver
+# 4. Production Server starten
+python -c "from waitress import serve; from logic_trainer.wsgi import application; print('Server: http://localhost:8000'); serve(application, host='0.0.0.0', port=8000)"
+```
+
+**URL:** http://localhost:8000 (alles über einen Port)
+
+---
+
+## 🏗️ Architektur
+
+### Development Mode
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      DEVELOPMENT MODE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────────┐         ┌──────────────────────┐      │
+│  │  React Frontend     │   API   │  Django Backend      │      │
+│  │  Port 5173          │ ◄─────► │  Port 8000           │      │
+│  │  (Vite Hot Reload)  │  JSON   │  (REST API + Admin)  │      │
+│  └─────────────────────┘         └──────────────────────┘      │
+│       npm run dev                 python manage.py runserver    │
+│                                                                 │
+│  ✅ Hot Reload - Änderungen sofort sichtbar                     │
+│  ✅ Schnelle Entwicklung                                        │
+│  ❌ 2 Terminal-Fenster nötig                                    │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Production Mode
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      PRODUCTION MODE                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│         ┌────────────────────────────────────┐                  │
+│         │ Waitress/Django Server (Port 8000) │                  │
+│         │                                    │                  │
+│         │  ┌─ React SPA (statisch via        │                  │
+│         │  │  Whitenoise)                    │                  │
+│         │  ├─ REST API (/api/)               │                  │
+│         │  ├─ Admin Panel (/admin/)          │                  │
+│         │  └─ Static Files (/static/)        │                  │
+│         └────────────────────────────────────┘                  │
+│                                                                 │
+│  ✅ Ein Server - einfaches Deployment                           │
+│  ✅ Professionell für Präsentationen                            │
+│  ❌ Nach Frontend-Änderungen: Build nötig                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Build-Workflow
+```
+frontend/src/     →    npm run build    →    frontend/dist/
+                                                   │
+                                                   ▼
+                       collectstatic     →    staticfiles/
+                                                   │
+                                                   ▼
+                       Whitenoise serviert statische Dateien
 ```
 
 ---
 
-## 📡 API Dokumentation
+## 🔧 Wichtige Django Befehle
 
-### Base URL
-```
-http://localhost:8000/api/
-```
+### Server & Migrations
+```powershell
+# Development Server starten
+python manage.py runserver
 
-### Verfügbare Endpoints
+# Neue Migration erstellen (nach Model-Änderungen)
+python manage.py makemigrations
 
-**Tasks API**
-```typescript
-GET    /api/tasks/           // Alle Tasks abrufen
-GET    /api/tasks/{id}/      // Einen Task abrufen
-POST   /api/tasks/           // Neuen Task erstellen
-```
+# Migrationen anwenden
+python manage.py migrate
 
-**Users API**
-```typescript
-GET    /api/users/           // Alle User abrufen
-GET    /api/users/{id}/      // Einen User abrufen
-GET    /api/users/me/        // Aktueller User
+# Static Files sammeln (für Production)
+python manage.py collectstatic --noinput
 ```
 
-**Attempts API**
-```typescript
-GET    /api/attempts/        // Alle Versuche abrufen
-POST   /api/attempts/        // Lösung einreichen
+### Admin & Debugging
+```powershell
+# Superuser erstellen
+python manage.py createsuperuser
 
-// POST Payload:
-{
-  "user_id": 1,
-  "task_id": 42,
-  "solution": {"A": true, "B": false},
-  "is_correct": true,
-  "feedback": "Korrekt gelöst!"
-}
+# Django Shell öffnen
+python manage.py shell
+
+# Alle URLs anzeigen
+python manage.py show_urls
 ```
 
-### API-Integration im Frontend
+### Aufgaben-Generierung
+```powershell
+# Task-Pool Status prüfen
+python manage.py prefill_tasks --status
 
-```typescript
-// src/services/api.ts
-import { getTasks, submitAttempt } from './services/api';
+# Tasks vorab generieren
+python manage.py prefill_tasks --type UNIT_PROPAGATION --level 1 --count 10
+python manage.py prefill_tasks --type CASE_SPLIT --level 2 --count 5
+```
 
-// Tasks laden
-const { data: tasks, error } = await getTasks();
+### Tests
+```powershell
+# Django API Tests
+python manage.py test apps
 
-// Lösung einreichen
-const { data: attempt } = await submitAttempt({
-  user_id: 1,
-  task_id: 42,
-  solution: { A: true, B: false },
-  is_correct: true,
-  feedback: "Richtig!"
-});
+# Core Logic Tests (pytest)
+pytest core/tests/
+
+# Alle Tests
+pytest
+```
+
+### Frontend Befehle
+```powershell
+cd frontend
+
+# Development Server
+npm run dev
+
+# Production Build
+npm run build
+
+# Linting
+npm run lint
 ```
 
 ---
@@ -263,163 +303,114 @@ const { data: attempt } = await submitAttempt({
 ## 📁 Projektstruktur
 
 ```
-propositional-logic-trainer/
-├── apps/                      # Django Apps
-│   ├── users/                # Benutzer & Authentifizierung
-│   │   ├── models.py        # User, Attempt Models
-│   │   └── serializers.py   # DRF Serializers
-│   ├── generate_tasks/       # Task-Generierung
-│   │   ├── models.py        # Task Model
-│   │   └── serializers.py
-│   ├── solve_tasks/          # Lösungsalgorithmen
-│   └── feedback/             # Feedback-Engine
+prop-logic-trainer/
 │
-├── core/                      # Shared Utilities (Non-Django)
+├── apps/                          # Django Apps (API Layer)
+│   ├── users/                     # Benutzer & Authentifizierung
+│   │   ├── models.py             # User, Attempt Models
+│   │   ├── views.py              # REST ViewSets
+│   │   └── serializers.py        # DRF Serializers
+│   ├── generate_tasks/            # Task-Generierung API
+│   ├── solve_tasks/               # Lösungsverarbeitung API
+│   └── feedback/                  # Feedback-Engine API
+│
+├── core/                          # Business Logic (Non-Django)
 │   ├── logic_engine/
-│   │   ├── solver/          # MarginalSolver, BooleanTable
-│   │   └── feedback/        # FeedbackEngine
-│   └── task_generator/      # Task-Generator
+│   │   ├── solver/               # Bucket Elimination, SymPy
+│   │   └── feedback/             # FeedbackEngine
+│   ├── task_generator/           # Aufgaben-Generator
+│   └── tests/                    # pytest Tests
 │
-├── frontend/                  # React Frontend
+├── frontend/                      # React SPA
 │   ├── src/
-│   │   ├── components/      # UI Components
-│   │   ├── pages/           # Seiten (Lernpfad, Account, etc.)
-│   │   ├── services/        # API Integration (api.ts)
-│   │   ├── App.tsx          # Hauptkomponente + Routing
-│   │   └── main.tsx         # Entry Point
+│   │   ├── components/           # UI Components
+│   │   ├── pages/                # Seiten (Lernpfad, Account, etc.)
+│   │   ├── services/             # API Integration
+│   │   ├── contexts/             # React Context (State)
+│   │   └── logic_visualizer/     # Formel-Visualisierung
 │   ├── package.json
 │   └── vite.config.ts
 │
-├── logic_trainer/             # Django Projekt-Konfiguration
-│   ├── settings.py          # Django Settings
-│   ├── urls.py              # URL Routing
-│   └── wsgi.py
+├── logic_trainer/                 # Django Konfiguration
+│   ├── settings.py               # Django Settings
+│   └── urls.py                   # URL Routing
 │
-├── scripts/                   # Startup-Skripte
-│   ├── start-dev.ps1        # Development Mode
-│   └── start-production.ps1 # Production Mode
+├── scripts/                       # Startup-Skripte
+│   ├── start-dev.ps1             # Development Mode
+│   └── start-production.ps1      # Production Mode
 │
-├── manage.py                  # Django CLI
-├── requirements.txt           # Python Dependencies
-├── pyproject.toml            # Package Metadata
-└── README.md                 # Diese Datei
-```
-
----
-
-## 🔧 Häufige Befehle
-
-### Django
-
-```powershell
-# Server starten
-python manage.py runserver
-
-# Neue Migration erstellen
-python manage.py makemigrations
-
-# Migration anwenden
-python manage.py migrate
-
-# Django Shell öffnen
-python manage.py shell
-
-# Superuser erstellen
-python manage.py createsuperuser
-
-# Tests ausführen
-pytest
-```
-
-### Frontend
-
-```powershell
-cd frontend
-
-# Dev Server starten
-npm run dev
-
-# Production Build
-npm run build
-
-# Lint Code
-npm run lint
-
-# Dependencies aktualisieren
-npm update
-```
-
----
-
-## 🐛 Troubleshooting
-
-### "npm" nicht gefunden
-```powershell
-# Node.js installieren von https://nodejs.org/
-# Terminal neu starten nach Installation
-where.exe npm  # Sollte Pfad anzeigen
-```
-
-**Hinweis:** Node.js kann **nicht** in Python venv (`.venv/`) installiert werden!  
-Es ist eine eigene Laufzeitumgebung und muss systemweit installiert werden.
-
-### Kann ich Node.js in requirements.txt / pyproject.toml packen?
-**Nein!** Diese Dateien sind nur für Python-Pakete (pip).  
-Node.js ist eine separate Laufzeit (wie Python selbst) und muss separat installiert werden.
-
-### Port bereits belegt
-```powershell
-# Backend auf anderem Port
-python manage.py runserver 8001
-
-# Frontend Port ändern in vite.config.ts
-# server: { port: 3001 }
-```
-
-### CORS Fehler
-```python
-# logic_trainer/settings.py
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",  # Falls geändert
-]
-```
-
-### Frontend findet Backend nicht
-```typescript
-// frontend/.env
-VITE_API_URL=http://localhost:8000/api
-```
-
-### Static Files nicht gefunden
-```powershell
-# Static Files sammeln
-python manage.py collectstatic --noinput
-
-# Development Mode: static files werden automatisch serviert
+├── docs/                          # Dokumentation
+│   ├── research/                 # Forschungsunterlagen
+│   ├── architecture/             # Architektur-Diagramme
+│   └── thesis/                   # Thesis-Materialien
+│
+├── examples/                      # Beispieldaten
+│
+├── manage.py                      # Django CLI
+├── requirements.txt               # Python Dependencies
+├── pyproject.toml                 # Package Metadata
+├── .gitignore                     # Git Ignore Rules
+└── README.md                      # Diese Datei
 ```
 
 ---
 
 ## 📚 Weiterführende Dokumentation
 
+### Framework-Dokumentation
 - **Django:** https://docs.djangoproject.com/
 - **Django REST Framework:** https://www.django-rest-framework.org/
 - **React:** https://react.dev/
-- **Vite:** https://vitejs.dev/
+- **Vite:** https://vite.dev/
 - **Tailwind CSS:** https://tailwindcss.com/
+
+### API Endpunkte
+
+| Endpoint | Methode | Beschreibung |
+|----------|---------|--------------|
+| `/api/tasks/` | GET | Alle Tasks abrufen |
+| `/api/tasks/{id}/` | GET | Einen Task abrufen |
+| `/api/tasks/next/` | GET | Nächste adaptive Aufgabe |
+| `/api/users/` | GET | Alle User abrufen |
+| `/api/users/me/` | GET | Aktueller User |
+| `/api/attempts/` | POST | Lösung einreichen |
+
+### Troubleshooting
+
+**Port bereits belegt:**
+```powershell
+python manage.py runserver 8001
+```
+
+**CORS Fehler:** Prüfe `CORS_ALLOWED_ORIGINS` in `logic_trainer/settings.py`
+
+**Static Files nicht gefunden:** 
+```powershell
+python manage.py collectstatic --noinput
+```
+
+**Module not found:**
+```powershell
+# Python
+pip install -r requirements.txt
+
+# Node.js
+cd frontend && npm install
+```
 
 ---
 
 ## 📝 License
 
-[Siehe LICENSE Datei]
+Dieses Projekt ist im Rahmen einer Bachelorarbeit an der Hochschule Karlsruhe entstanden.
 
 ---
 
 ## 👥 Kontakt
 
 **Hochschule Karlsruhe – Technik und Wirtschaft**
-- Moltkestraße 30, 76133 Karlsruhe
-- Tel: +49 721 925-0
-- E-Mail: info@h-ka.de
+
+📍 Moltkestraße 30, 76133 Karlsruhe  
+📞 +49 721 925-0  
+📧 info@h-ka.de  
+🌐 https://www.h-ka.de

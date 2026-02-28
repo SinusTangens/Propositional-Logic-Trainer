@@ -151,25 +151,29 @@ class SolveTaskView(APIView):
                 'is_correct': is_var_correct
             }
         
-        # Statistiken und Progress aktualisieren
         user = request.user
+        progress_update = None
+        
+        # Statistiken und Progress aktualisieren
         user.total_solved += 1
         if all_correct:
             user.correct_solved += 1
+            # Globale Streak erhöhen (seitenübergreifend)
+            user.current_streak += 1
+            # Highscore aktualisieren wenn neue Bestleistung
+            if user.current_streak > user.highscore_streak:
+                user.highscore_streak = user.current_streak
+        else:
+            # Bei falscher Antwort: globale Streak zurücksetzen
+            user.current_streak = 0
         user.save()
         
-        # Progress aktualisieren
-        progress_update = None
+        # Progress aktualisieren (Level-spezifisch)
         progress_obj, created = UserProgress.objects.get_or_create(
             user=user,
             task_type=db_task.task_type
         )
         progress_update = progress_obj.record_answer(all_correct)
-        
-        # Highscore aktualisieren
-        if progress_obj.correct_in_row > user.highscore_streak:
-            user.highscore_streak = progress_obj.correct_in_row
-            user.save()
         
         # Attempt speichern
         Attempt.objects.create(
@@ -188,7 +192,8 @@ class SolveTaskView(APIView):
             'stats': {
                 'totalSolved': user.total_solved,
                 'correctSolved': user.correct_solved,
-                'highscoreStreak': user.highscore_streak
+                'highscoreStreak': user.highscore_streak,
+                'currentStreak': user.current_streak
             }
         }
         
