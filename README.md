@@ -9,7 +9,7 @@ Das Ziel dieser Arbeit ist die Konzeption und Umsetzung einer **digitalen Übung
 Die Anwendung bietet:
 - **Automatisierte Aufgabengenerierung** - Unbegrenzte Übungsmöglichkeiten
 - **Sofortige Auswertung** - Direktes Feedback zu Lösungsversuchen
-- **Adaptive Schwierigkeit** - Anpassung an das individuelle Lernverhalten
+- **Levelsystem** - Breit gefächerte Schwierigkeitsgrade für schrittweises Lernen
 - **Lernfortschritttracking** - Sichtbarer Fortschritt zur Motivation
 - **Verschiedene Lösungsverfahren** - Unit Propagation, Case Split und mehr
 
@@ -55,7 +55,7 @@ Die Anwendung bietet:
 | Lucide React | - | Icon Library |
 
 ### Datenbank
-- **SQLite** - Development & Production (für Thesis ausreichend)
+- **SQLite** - Development & Production 
 
 ---
 
@@ -65,6 +65,8 @@ Die Anwendung bietet:
 
 #### 1. Python 3.11+
 ```powershell
+# Installation: https://www.python.org/downloads/
+# Nach Installation:
 python --version
 ```
 
@@ -90,26 +92,22 @@ git --version
 git clone https://github.com/SinusTangens/Propositional-Logic-Trainer.git
 cd Propositional-Logic-Trainer
 
-# 2. Python Virtual Environment erstellen
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+# 2. Setup-Script ausführen (erstellt venv, installiert Dependencies, aktiviert venv)
+bash setup.sh
+# oder unter Windows mit Git Bash:
+# ./setup.sh
 
-# 3. Python Dependencies installieren
-pip install -r requirements.txt
-
-# 4. Django Migrationen durchführen
+# 3. Django Migrationen durchführen
+python manage.py makemigrations  # Falls neue Models hinzugefügt wurden
 python manage.py migrate
 
-# 5. Superuser erstellen (für Admin-Panel)
+# 4. Superuser erstellen (für Admin-Panel)
 python manage.py createsuperuser
-
-# 6. Frontend Dependencies installieren
-cd frontend
-npm install
-cd ..
 ```
 
 ✅ **Installation abgeschlossen!**
+
+> **Hinweis:** Frontend-Dependencies (`npm install`) werden automatisch von den Start-Skripten installiert, falls nicht vorhanden.
 
 ---
 
@@ -128,7 +126,6 @@ cd ..
 
 **Terminal 1 - Backend:**
 ```powershell
-.\.venv\Scripts\Activate.ps1
 python manage.py runserver
 ```
 
@@ -156,18 +153,15 @@ npm run dev
 
 #### Manuell
 ```powershell
-# 1. Virtual Environment aktivieren
-.\.venv\Scripts\Activate.ps1
-
-# 2. Frontend bauen
+# 1. Frontend bauen
 cd frontend
 npm run build
 cd ..
 
-# 3. Static Files sammeln
+# 2. Static Files sammeln
 python manage.py collectstatic --noinput
 
-# 4. Production Server starten
+# 3. Production Server starten
 python -c "from waitress import serve; from logic_trainer.wsgi import application; print('Server: http://localhost:8000'); serve(application, host='0.0.0.0', port=8000)"
 ```
 
