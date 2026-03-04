@@ -5,14 +5,21 @@ Füllt den Task-Pool auf TARGET_TASKS_PER_COMBINATION (200) ungelöste Tasks
 pro task_type/level Kombination auf.
 
 Verwendung:
-    python manage.py prefill_tasks           # Alle Kombinationen auffüllen
-    python manage.py prefill_tasks --status  # Nur Status anzeigen
-    python manage.py prefill_tasks --type DIRECT_INFERENCE --level 1  # Nur bestimmte Kombination
+    python manage.py prefill_tasks              # Alle Kombinationen parallel
+    python manage.py prefill_tasks --sequential # Sequenziell (eine Kombination nach der anderen)
+    python manage.py prefill_tasks --status     # Nur Status anzeigen
+    python manage.py prefill_tasks --type CASE_SPLIT --level 3  # Nur bestimmte Kombination
+    python manage.py prefill_tasks --workers 4  # Anzahl paralleler Prozesse (Default: CPU-Kerne)
 """
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from django.core.management.base import BaseCommand
 
 from apps.generate_tasks.services import task_pregeneration_service, TARGET_TASKS_PER_COMBINATION
 from core.task_generator.Task import get_all_task_types, get_levels_for_task_type
+
+# Worker-Funktion aus separatem Modul (keine Django-Imports auf Modul-Ebene)
+from .prefill_worker import refill_worker
 
 
 class Command(BaseCommand):
@@ -34,11 +41,24 @@ class Command(BaseCommand):
             type=int,
             help='Nur bestimmtes Level auffüllen (erfordert --type)'
         )
+        parser.add_argument(
+            '--sequential',
+            action='store_true',
+            help='Sequenzielle Ausführung statt parallel (langsamer, aber weniger Ressourcen)'
+        )
+        parser.add_argument(
+            '--workers',
+            type=int,
+            default=None,
+            help='Anzahl paralleler Worker-Prozesse (Default: Anzahl CPU-Kerne)'
+        )
 
     def handle(self, *args, **options):
         show_status_only = options['status']
         filter_type = options['type']
         filter_level = options['level']
+        sequential = options['sequential']
+        workers = options['workers']
         
         if show_status_only:
             self._show_status()
@@ -49,14 +69,17 @@ class Command(BaseCommand):
         ))
         
         if filter_type and filter_level:
-            # Nur bestimmte Kombination
+            # Nur bestimmte Kombination (immer sequenziell)
             self._refill_single(filter_type, filter_level)
         elif filter_type:
             # Alle Levels für einen Type
-            self._refill_type(filter_type)
+            self._refill_type(filter_type, sequential, workers)
         else:
             # Alle Kombinationen
-            self._refill_all()
+            if sequential:
+                self._refill_all_sequential()
+            else:
+                self._refill_all_parallel(workers)
     
     def _show_status(self):
         """Zeigt den Status aller Kombinationen an"""
@@ -104,7 +127,7 @@ class Command(BaseCommand):
             f'  → Fertig: {generated} generiert, jetzt {after} ungelöst'
         ))
     
-    def _refill_type(self, task_type: str):
+    def _refill_type(self, task_type: str, sequential: bool = False, workers: int = None):
         """Füllt alle Levels eines TaskTypes auf"""
         try:
             from core.task_generator.Task import TaskType
@@ -116,12 +139,17 @@ class Command(BaseCommand):
         levels = get_levels_for_task_type(tt)
         self.stdout.write(f'Fülle {task_type} auf (Levels: {levels})...\n')
         
-        for level in levels:
-            self._refill_single(task_type, level)
+        if sequential:
+            for level in levels:
+                self._refill_single(task_type, level)
+        else:
+            # Parallel für diesen TaskType
+            combinations = [(task_type, level) for level in levels]
+            self._run_parallel(combinations, workers)
     
-    def _refill_all(self):
-        """Füllt alle Kombinationen auf"""
-        self.stdout.write('Fülle alle Kombinationen auf...\n')
+    def _refill_all_sequential(self):
+        """Füllt alle Kombinationen sequenziell auf (alte Methode)"""
+        self.stdout.write('Fülle alle Kombinationen sequenziell auf...\n')
         
         total_generated = 0
         
@@ -146,6 +174,75 @@ class Command(BaseCommand):
                 total_generated += generated
                 
                 self.stdout.write(self.style.SUCCESS(f' {generated} ✓'))
+        
+        self.stdout.write('')
+        self.stdout.write(self.style.SUCCESS(
+            f'\n=== Fertig: {total_generated} Tasks generiert ==='
+        ))
+        self._show_status()
+    
+    def _refill_all_parallel(self, workers: int = None):
+        """Füllt alle Kombinationen parallel auf"""
+        # Sammle alle Kombinationen die aufgefüllt werden müssen
+        combinations = []
+        for task_type in get_all_task_types():
+            for level in get_levels_for_task_type(task_type):
+                combinations.append((task_type.name, level))
+        
+        if workers is None:
+            workers = min(multiprocessing.cpu_count(), len(combinations))
+        
+        self.stdout.write(self.style.NOTICE(
+            f'Starte parallele Generierung mit {workers} Worker-Prozessen...\n'
+        ))
+        self.stdout.write(f'Kombinationen zu verarbeiten: {len(combinations)}\n')
+        
+        self._run_parallel(combinations, workers)
+    
+    def _run_parallel(self, combinations: list, workers: int = None):
+        """Führt Refill parallel für gegebene Kombinationen aus"""
+        if workers is None:
+            workers = min(multiprocessing.cpu_count(), len(combinations))
+        
+        total_generated = 0
+        completed = 0
+        
+        # ProcessPoolExecutor für CPU-intensive SymPy-Berechnungen
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            # Starte alle Jobs
+            futures = {
+                executor.submit(refill_worker, task_type, level): (task_type, level)
+                for task_type, level in combinations
+            }
+            
+            # Verarbeite Ergebnisse sobald sie fertig sind
+            for future in as_completed(futures):
+                task_type, level = futures[future]
+                completed += 1
+                
+                try:
+                    result = future.result()
+                    
+                    if result['skipped']:
+                        self.stdout.write(
+                            f'[{completed}/{len(combinations)}] '
+                            f'{result["task_type"]} Level {result["level"]}: '
+                            f'{result["before"]} vorhanden ✓'
+                        )
+                    else:
+                        total_generated += result['generated']
+                        self.stdout.write(self.style.SUCCESS(
+                            f'[{completed}/{len(combinations)}] '
+                            f'{result["task_type"]} Level {result["level"]}: '
+                            f'{result["generated"]} generiert '
+                            f'({result["before"]} → {result["after"]})'
+                        ))
+                        
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        f'[{completed}/{len(combinations)}] '
+                        f'{task_type} Level {level}: Fehler - {e}'
+                    ))
         
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS(

@@ -11,7 +11,7 @@ Die Anwendung bietet:
 - **Sofortige Auswertung** - Direktes Feedback zu Lösungsversuchen
 - **Levelsystem** - Breit gefächerte Schwierigkeitsgrade für schrittweises Lernen
 - **Lernfortschritttracking** - Sichtbarer Fortschritt zur Motivation
-- **Verschiedene Lösungsverfahren** - Unit Propagation, Case Split und mehr
+- **Verschiedene Lösungsverfahren** - Unit Propagation, Case Split
 
 ---
 
@@ -23,7 +23,7 @@ Die Anwendung bietet:
   - [Development Mode](#development-mode)
   - [Production Mode](#production-mode)
 - [Architektur](#-architektur)
-- [Django Befehle](#-wichtige-django-befehle)
+- [Django Befehle](#-django-befehle)
 - [Projektstruktur](#-projektstruktur)
 - [Weiterführende Dokumentation](#-weiterführende-dokumentation)
 - [License](#-license)
@@ -61,76 +61,89 @@ Die Anwendung bietet:
 
 ## 💻 Projekt-Setup
 
-### Voraussetzungen
 
-#### 1. Python 3.11+
-```powershell
-# Installation: https://www.python.org/downloads/
-# Nach Installation:
-python --version
-```
-
-#### 2. Node.js 18+ & npm
-Node.js ist eine separate Laufzeitumgebung (nicht in Python venv installierbar).
-
-```powershell
-# Installation: https://nodejs.org/ (LTS Version)
-# Nach Installation:
-node --version
-npm --version
-```
-
-#### 3. Git
-```powershell
-git --version
-```
-
-### Installation
-
-```powershell
-# 1. Repository klonen
+**1. Repository clonen**
+```bash
 git clone https://github.com/SinusTangens/Propositional-Logic-Trainer.git
 cd Propositional-Logic-Trainer
-
-# 2. Setup-Script ausführen (erstellt venv, installiert Dependencies, aktiviert venv)
-bash setup.sh
-# oder unter Windows mit Git Bash:
-# ./setup.sh
-
-# 3. Django Migrationen durchführen
-python manage.py makemigrations  # Falls neue Models hinzugefügt wurden
-python manage.py migrate
-
-# 4. Superuser erstellen (für Admin-Panel)
-python manage.py createsuperuser
 ```
 
-✅ **Installation abgeschlossen!**
+**2. Node.js installieren** (falls noch nicht vorhanden):  
+→ https://nodejs.org/ (LTS Version)
 
-> **Hinweis:** Frontend-Dependencies (`npm install`) werden automatisch von den Start-Skripten installiert, falls nicht vorhanden.
+**3. Setup-Skript ausführen:**
+
+| Betriebssystem | Befehl |
+|----------------|--------|
+| Windows (PowerShell) | `.\scripts\setup.ps1` |
+| macOS / Linux / Windows (Git Bash) | `./scripts/setup.sh` |
+
+Das Setup-Skript:
+- Installiert Python 3.11 via [uv](https://docs.astral.sh/uv/)
+- Erstellt eine virtuelle Umgebung (`.venv`)
+- Installiert alle Python-Dependencies
+- Führt Datenbank-Migrationen aus
+
+
+**4. Virtuelle Umgebung aktivieren**
+
+Die virtuelle Umgebung (`.venv`) wird in den meisten IDEs automatisch erkannt:
+
+- **VS Code / PyCharm**: Öffnen Sie ein neues Terminal – die venv wird automatisch aktiviert
+- **Andere Editoren / externe Terminals**: Manuell aktivieren:
+
+| Betriebssystem | Befehl |
+|---|---|
+| Windows (PowerShell) | `.\venv\Scripts\Activate.ps1` |
+| macOS / Linux / Git Bash | `source .venv/bin/activate` |
+
+Nach erfolgreicher Aktivierung erscheint `(.venv)` am Anfang der Kommandozeile.
+
+> **Hinweis:** Je nach Setup kann auch der Projektname angezeigt werden, z.B. `(prop-logic-trainer)` statt `(.venv)`. 
+
+
+**5. Aufgaben vorgenerieren (empfohlen)**
+
+Komplexere Aufgaben (insbesondere CASE_SPLIT) können bei der ersten Anfrage lange zum Generieren brauchen. Es wird empfohlen, die Datenbank vor der Nutzung mit Aufgaben zu füllen:
+
+```bash
+# Task-Pool vorab generieren (läuft parallel, nutzt alle CPU-Kerne)
+python manage.py prefill_tasks
+
+# Oder mit begrenzter Worker-Anzahl
+python manage.py prefill_tasks --workers 4
+```
+
+Dies ist **optional**, aber **empfohlen**, damit die App später responsiv läuft.
 
 ---
 
 ## 🚀 Server starten
+
+Die Anwendung kann in zwei Modi gestartet werden.
 
 ### Development Mode
 
 **Empfohlen für Entwicklung** - Hot Reload, schnelle Iteration.
 
 #### Mit Script (empfohlen)
-```powershell
-.\scripts\start-dev.ps1
-```
 
-#### Manuell (2 Terminals)
+| Betriebssystem | Befehl |
+|----------------|--------|
+| Windows (PowerShell) | `.\scripts\start-dev.ps1` |
+| macOS / Linux | `./scripts/start-dev.sh` |
+
+
+#### Manuell
 
 **Terminal 1 - Backend:**
-```powershell
+```bash
+# venv muss aktiviert sein!
 python manage.py runserver
 ```
 
 **Terminal 2 - Frontend:**
-```powershell
+```bash
 cd frontend
 npm run dev
 ```
@@ -147,12 +160,16 @@ npm run dev
 **Empfohlen für Präsentation/Demo** - Ein Server, professionell.
 
 #### Mit Script (empfohlen)
-```powershell
-.\scripts\start-production.ps1
-```
+
+| Betriebssystem | Befehl |
+|----------------|--------|
+| Windows (PowerShell) | `.\scripts\start-production.ps1` |
+| macOS / Linux | `./scripts/start-production.sh` |
 
 #### Manuell
-```powershell
+```bash
+# venv muss aktiviert sein!
+
 # 1. Frontend bauen
 cd frontend
 npm run build
@@ -162,7 +179,7 @@ cd ..
 python manage.py collectstatic --noinput
 
 # 3. Production Server starten
-python -c "from waitress import serve; from logic_trainer.wsgi import application; print('Server: http://localhost:8000'); serve(application, host='0.0.0.0', port=8000)"
+python -m waitress --host=127.0.0.1 --port=8000 logic_trainer.wsgi:application
 ```
 
 **URL:** http://localhost:8000 (alles über einen Port)
@@ -214,24 +231,21 @@ python -c "from waitress import serve; from logic_trainer.wsgi import applicatio
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Build-Workflow
-```
-frontend/src/     →    npm run build    →    frontend/dist/
-                                                   │
-                                                   ▼
-                       collectstatic     →    staticfiles/
-                                                   │
-                                                   ▼
-                       Whitenoise serviert statische Dateien
-```
-
 ---
 
-## 🔧 Wichtige Django Befehle
+## 🔧 Django Befehle
+
+```powershell
+
+# Listet alle Befehle der Django CLI auf 
+python manage.py
+```
+
 
 ### Server & Migrations
 ```powershell
-# Development Server starten
+
+#Deployment Server starten
 python manage.py runserver
 
 # Neue Migration erstellen (nach Model-Änderungen)
@@ -246,7 +260,7 @@ python manage.py collectstatic --noinput
 
 ### Admin & Debugging
 ```powershell
-# Superuser erstellen
+# Superuser erstellen (um das Admin Panel zu nutzen)
 python manage.py createsuperuser
 
 # Django Shell öffnen
@@ -256,14 +270,26 @@ python manage.py shell
 python manage.py show_urls
 ```
 
-### Aufgaben-Generierung
-```powershell
-# Task-Pool Status prüfen
-python manage.py prefill_tasks --status
+### Vorgenerierung Aufgaben
 
-# Tasks vorab generieren
-python manage.py prefill_tasks --type UNIT_PROPAGATION --level 1 --count 10
-python manage.py prefill_tasks --type CASE_SPLIT --level 2 --count 5
+Generiert Aufgaben und schreibt sie in die Datenbank (200 pro Aufgabentyp-Level).
+Standardmäßig läuft dies **parallel** mit allen CPU-Kernen.
+
+```powershell
+# Generiert für alle Aufgabentypen und Level (parallel)
+python manage.py prefill_tasks
+
+# Sequenziell ausführen (weniger Ressourcen)
+python manage.py prefill_tasks --sequential
+
+# Mit begrenzter Worker-Anzahl
+python manage.py prefill_tasks --workers 4
+
+# Nur bestimmter Aufgabentyp und Level
+python manage.py prefill_tasks --type CASE_SPLIT --level 2
+
+# Status anzeigen
+python manage.py prefill_tasks --status
 ```
 
 ### Tests
@@ -274,8 +300,10 @@ python manage.py test apps
 # Core Logic Tests (pytest)
 pytest core/tests/
 
-# Alle Tests
-pytest
+# Workflow-Integrationtest
+python core/tests/workflow_test.py
+
+
 ```
 
 ### Frontend Befehle
@@ -330,8 +358,12 @@ prop-logic-trainer/
 │   └── urls.py                   # URL Routing
 │
 ├── scripts/                       # Startup-Skripte
-│   ├── start-dev.ps1             # Development Mode
-│   └── start-production.ps1      # Production Mode
+│   ├── setup.ps1                 # Setup (Windows PowerShell)
+│   ├── setup.sh                  # Setup (macOS/Linux/Git Bash)
+│   ├── start-dev.ps1             # Development Mode (Windows)
+│   ├── start-dev.sh              # Development Mode (macOS/Linux)
+│   ├── start-production.ps1      # Production Mode (Windows)
+│   └── start-production.sh       # Production Mode (macOS/Linux)
 │
 ├── docs/                          # Dokumentation
 │   ├── research/                 # Forschungsunterlagen

@@ -118,6 +118,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            # Timeout in Sekunden für Database-Locks (wichtig für parallele Task-Generierung)
+            'timeout': 30,
+        }
     }
 }
 

@@ -347,7 +347,7 @@ export default function Lernpfad() {
                 {[1, 2, 3, 4].map((level, idx) => {
                   const isCompleted = level < unitPropProgress.currentLevel || (unitPropProgress.isCompleted && level === unitPropProgress.totalLevels);
                   const isActive = level === unitPropProgress.currentLevel && !unitPropProgress.isCompleted;
-                  const isLocked = false; // Unit Prop ist nie gesperrt
+                  const isLocked = level > unitPropProgress.currentLevel && !unitPropProgress.isCompleted; // Level noch nicht erreicht
                   
                   return (
                     <div key={level} className="flex items-center">
@@ -411,7 +411,7 @@ export default function Lernpfad() {
                 {[1, 2, 3].map((level, idx) => {
                   const isCompleted = caseSplitProgress.isUnlocked && (level < caseSplitProgress.currentLevel || (caseSplitProgress.isCompleted && level === caseSplitProgress.totalLevels));
                   const isActive = caseSplitProgress.isUnlocked && level === caseSplitProgress.currentLevel && !caseSplitProgress.isCompleted;
-                  const isLocked = !caseSplitProgress.isUnlocked;
+                  const isLocked = !caseSplitProgress.isUnlocked || (level > caseSplitProgress.currentLevel && !caseSplitProgress.isCompleted); // Typ gesperrt ODER Level noch nicht erreicht
                   
                   return (
                     <div key={level} className="flex items-center">
@@ -567,6 +567,13 @@ export default function Lernpfad() {
           </div>
         </div>
 
+        {/* Lade-Zustand */}
+        {loading && !currentTask && (
+          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-12 max-w-4xl text-center">
+            <div className="animate-pulse text-gray-600">Lade Aufgabe...</div>
+          </div>
+        )}
+
         {/* Exercise Card */}
         {currentTask && (
           <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-12 max-w-4xl">
@@ -696,9 +703,10 @@ export default function Lernpfad() {
               ) : (
                 <Button
                   onClick={handleNextTask}
+                  disabled={loading}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white text-lg py-6 border-none"
                 >
-                  {solveResult?.progress?.level_up || solveResult?.progress?.type_completed 
+                  {loading ? 'Lade...' : solveResult?.progress?.level_up || solveResult?.progress?.type_completed 
                     ? 'Weiter zum Pfad' 
                     : 'Nächste Aufgabe'}
                 </Button>

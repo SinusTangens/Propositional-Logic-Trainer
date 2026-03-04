@@ -1,0 +1,28 @@
+# Standard-Einstellung: Auto-Erkennung
+* text=auto
+
+# Shell-Skripte immer mit LF (Unix)
+*.sh text eol=lf
+
+# PowerShell-Skripte immer mit CRLF (Windows)
+*.ps1 text eol=crlf
+
+# Python-Dateien mit LF
+*.py text eol=lf
+
+# Frontend-Dateien mit LF
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# Binärdateien nicht verändern
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.sqlite3 binary

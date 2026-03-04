@@ -163,8 +163,7 @@ function HomePage() {
             </p>
             
             <p className="mt-4 text-xs text-gray-500">
-              Diese Webanwendung wurde im Rahmen einer Bachelorarbeit entwickelt 
-              und dient ausschließlich Bildungszwecken.
+              Diese Webanwendung wurde im Rahmen einer Bachelorarbeit entwickelt.
             </p>
             
             <a 

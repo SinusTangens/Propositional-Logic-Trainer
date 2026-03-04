@@ -376,9 +376,10 @@ export default function UnitPropagation() {
               ) : (
                 <Button
                   onClick={handleNextTask}
+                  disabled={loading}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white text-lg py-6 border-none"
                 >
-                  Nächste Aufgabe
+                  {loading ? 'Lade...' : 'Nächste Aufgabe'}
                 </Button>
               )}
             </div>

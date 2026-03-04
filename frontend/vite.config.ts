@@ -3,12 +3,12 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     tailwindcss(),
   ],
-  base: '/static/',  // Für Django Production: Assets unter /static/
+  base: mode === 'production' ? '/static/' : '/',  // /static/ nur für Django Production-Build
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -25,4 +25,4 @@ export default defineConfig({
     }
   },
   assetsInclude: ['**/*.svg', '**/*.csv', '**/*.png', '**/*.jpg'],
-})
+}))
