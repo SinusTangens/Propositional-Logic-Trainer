@@ -418,7 +418,7 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
 
     # Lösbarkeit durch eine simulierte Fallunterscheidung prüfen
-    # Es müssen mindestens ZWEI Variable exisitieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
+    # Es müssen mindestens ZWEI Variable existieren, bei der eine Annahme zu einer Lösung und die gegenteilige Annahme zu einem Widerspruch führt
     split_useful_count = 0
     
     for v in used_vars:
@@ -432,10 +432,10 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
 
         if (len(models_true) == 0 and len(models_false) == 1) or \
            (len(models_true) == 1 and len(models_false) == 0):
-            split_useful_count =+ 1
-            break
+            split_useful_count += 1
             
-    if split_useful_count > 1:
+            
+    if split_useful_count < 2:
         return False 
 
 

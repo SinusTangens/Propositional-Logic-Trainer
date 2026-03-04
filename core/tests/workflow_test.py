@@ -3,13 +3,15 @@ import os
 import random
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-backend_dir = os.path.dirname(current_dir)
-if backend_dir not in sys.path:
-    sys.path.append(backend_dir)
+# Projekt-Root zum Pfad hinzufügen (für 'core.*' Imports)
+current_dir = os.path.dirname(os.path.abspath(__file__))  # core/tests
+core_dir = os.path.dirname(current_dir)                    # core
+project_root = os.path.dirname(core_dir)                   # prop-logic-trainer
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from core.task_generator.generate_tasks import TaskGenerator, print_logical_pretty
-from core.task_generator.Task import TaskType, DIFFICULTY_CONFIG
+from core.task_generator.Task import TaskType, DIFFICULTY_CONFIG, get_all_task_types, get_levels_for_task_type
 from core.logic_engine.solver.MarginalSolver import BucketElimination
 from core.logic_engine.feedback.FeedbackEngine import FeedbackEngine
 from core.logic_engine.feedback.UserInput import UserInput
@@ -27,13 +29,16 @@ def main():
     print("1. Generiere Aufgabe...")
     try:
 
-        task_type = random.choice([TaskType.CASE_SPLIT, TaskType.DIRECT_INFERENCE])
-        if task_type is TaskType.CASE_SPLIT:
-            level = random.randint(1,3)
-        elif task_type is TaskType.DIRECT_INFERENCE:
-            level = random.randint(1,4)
-        else:
-            raise ValueError("Unbekannter Aufgabentyp.")
+        task_types = get_all_task_types()
+        task_type = random.choice(task_types)
+        levels = get_levels_for_task_type(task_type)
+        level = random.choice(levels)
+        # if task_type is TaskType.CASE_SPLIT:
+        #     level = random.randint(1,3)
+        # elif task_type is TaskType.DIRECT_INFERENCE:
+        #     level = random.randint(1,4)
+        # else:
+        #     raise ValueError("Unbekannter Aufgabentyp.")
 
         generator = TaskGenerator(DIFFICULTY_CONFIG) 
         task = generator.generate_task(task_type, level)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern

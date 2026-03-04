@@ -3,10 +3,12 @@ import os
 import pytest
 from sympy import symbols, And, Or, Not, Implies, Xor, Equivalent, satisfiable
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-backend_dir = os.path.dirname(current_dir)
-if backend_dir not in sys.path:
-    sys.path.append(backend_dir)
+# Projekt-Root zum Pfad hinzufügen (für 'core.*' Imports)
+current_dir = os.path.dirname(os.path.abspath(__file__))  # core/tests
+core_dir = os.path.dirname(current_dir)                    # core
+project_root = os.path.dirname(core_dir)                   # prop-logic-trainer
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from core.task_generator.Task import Task, TaskType
 from core.logic_engine.solver.MarginalSolver import BucketElimination

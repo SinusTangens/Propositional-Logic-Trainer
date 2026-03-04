@@ -178,6 +178,12 @@ class TaskPreGenerationService:
         Startet Nachgenerierung in einem separaten Thread.
         Für nicht-blockierende Nachgenerierung nach Attempt-Erstellung.
         """
+        # Bei Tests deaktivieren (Test-DB unterstützt keine parallelen Zugriffe)
+        import sys
+        if 'test' in sys.argv:
+            logger.debug(f"Async-Refill übersprungen (Test-Modus)")
+            return
+        
         def refill_worker():
             with self._lock:
                 self.refill_tasks(task_type, level)

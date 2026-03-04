@@ -158,13 +158,7 @@ function HomePage() {
               <p>76133 Karlsruhe</p>
             </div>
             
-            <p className="mt-4">
-              <strong>Kontakt:</strong> sinan.kammerer@gmail.com
-            </p>
-            
-            <p className="mt-4 text-xs text-gray-500">
-              Diese Webanwendung wurde im Rahmen einer Bachelorarbeit entwickelt.
-            </p>
+        
             
             <a 
               href="/datenschutz" 

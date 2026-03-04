@@ -21,6 +21,9 @@ echo ""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Mache alle Shell-Skripte ausfuehrbar (fuer zukuenftige Aufrufe)
+chmod +x "$SCRIPT_DIR"/*.sh 2>/dev/null || true
+
 # Pruefe ob Node.js installiert ist
 if ! command -v node &> /dev/null; then
     echo -e "${RED}Node.js ist nicht installiert!${NC}"

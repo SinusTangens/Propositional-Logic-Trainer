@@ -35,7 +35,7 @@ class DifficultySpec:
 
 
 
-# Regelbasierte Konfiguration des Schwierigkeisgrad über die Aufgabentypen und Levels hinweg
+# Regelbasierte Konfiguration des Schwierigkeisgrad über die Aufgabentypen und Level hinweg
 DIFFICULTY_CONFIG: Dict[Tuple[TaskType, int], DifficultySpec] = {
 
     (TaskType.DIRECT_INFERENCE, 1): DifficultySpec(

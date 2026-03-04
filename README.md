@@ -76,7 +76,12 @@ cd Propositional-Logic-Trainer
 | Betriebssystem | Befehl |
 |----------------|--------|
 | Windows (PowerShell) | `.\scripts\setup.ps1` |
-| macOS / Linux / Windows (Git Bash) | `./scripts/setup.sh` |
+| macOS / Linux / Windows (Git Bash) | `bash scripts/setup.sh` |
+
+> **Hinweis Windows:** Falls das Skript blockiert wird, einmalig ausführen:  
+> `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
+>
+> **Hinweis macOS/Linux:** Die Shell-Skripte setzen automatisch ihre Ausführungsrechte. Beim ersten Aufruf `bash scripts/setup.sh` verwenden, danach funktioniert `./scripts/setup.sh` direkt.
 
 Das Setup-Skript:
 - Installiert Python 3.11 via [uv](https://docs.astral.sh/uv/)
@@ -107,14 +112,11 @@ Nach erfolgreicher Aktivierung erscheint `(.venv)` am Anfang der Kommandozeile.
 Komplexere Aufgaben (insbesondere CASE_SPLIT) können bei der ersten Anfrage lange zum Generieren brauchen. Es wird empfohlen, die Datenbank vor der Nutzung mit Aufgaben zu füllen:
 
 ```bash
-# Task-Pool vorab generieren (läuft parallel, nutzt alle CPU-Kerne)
+# Task-Pool vorab generieren 
 python manage.py prefill_tasks
-
-# Oder mit begrenzter Worker-Anzahl
-python manage.py prefill_tasks --workers 4
 ```
 
-Dies ist **optional**, aber **empfohlen**, damit die App später responsiv läuft.
+Das ist **optional**, aber **empfohlen**, damit die App später responsiv läuft.
 
 ---
 
@@ -273,7 +275,7 @@ python manage.py show_urls
 ### Vorgenerierung Aufgaben
 
 Generiert Aufgaben und schreibt sie in die Datenbank (200 pro Aufgabentyp-Level).
-Standardmäßig läuft dies **parallel** mit allen CPU-Kernen.
+Standardmäßig **parallel** auf alle CPU-Kerne verteilt.
 
 ```powershell
 # Generiert für alle Aufgabentypen und Level (parallel)
@@ -334,11 +336,11 @@ prop-logic-trainer/
 │   │   └── serializers.py        # DRF Serializers
 │   ├── generate_tasks/            # Task-Generierung API
 │   ├── solve_tasks/               # Lösungsverarbeitung API
-│   └── feedback/                  # Feedback-Engine API
+│   └── feedback/                  # Feedback-Engine API (für spätere Feedbackmechanismen)
 │
 ├── core/                          # Business Logic (Non-Django)
 │   ├── logic_engine/
-│   │   ├── solver/               # Bucket Elimination, SymPy
+│   │   ├── solver/               # Bucket Elimination Solver
 │   │   └── feedback/             # FeedbackEngine
 │   ├── task_generator/           # Aufgaben-Generator
 │   └── tests/                    # pytest Tests
@@ -346,16 +348,21 @@ prop-logic-trainer/
 ├── frontend/                      # React SPA
 │   ├── src/
 │   │   ├── components/           # UI Components
+│   │   │   └── ui/               # Radix UI Wrapper
 │   │   ├── pages/                # Seiten (Lernpfad, Account, etc.)
 │   │   ├── services/             # API Integration
 │   │   ├── contexts/             # React Context (State)
-│   │   └── logic_visualizer/     # Formel-Visualisierung
+│   │   ├── lib/                  # Utility-Funktionen
+│   │   ├── styles/               # CSS Styles
+│   │   └── assets/               # Statische Assets
 │   ├── package.json
 │   └── vite.config.ts
 │
 ├── logic_trainer/                 # Django Konfiguration
 │   ├── settings.py               # Django Settings
-│   └── urls.py                   # URL Routing
+│   ├── urls.py                   # URL Routing
+│   ├── wsgi.py                   # WSGI Entry Point
+│   └── asgi.py                   # ASGI Entry Point
 │
 ├── scripts/                       # Startup-Skripte
 │   ├── setup.ps1                 # Setup (Windows PowerShell)
@@ -371,11 +378,18 @@ prop-logic-trainer/
 │   └── thesis/                   # Thesis-Materialien
 │
 ├── examples/                      # Beispieldaten
+│   ├── sample_tasks/             # Beispielaufgaben
+│   └── solution_walkthroughs/    # Lösungswege
+│
+├── staticfiles/                   # Gesammelte Static Files (Production)
 │
 ├── manage.py                      # Django CLI
 ├── requirements.txt               # Python Dependencies
 ├── pyproject.toml                 # Package Metadata
 ├── .gitignore                     # Git Ignore Rules
+├── .gitattributes                 # Git Zeilenenden-Konfiguration
+├── .python-version                # Python Version (für uv/pyenv)
+├── LICENSE                        # Lizenz
 └── README.md                      # Diese Datei
 ```
 
@@ -383,23 +397,44 @@ prop-logic-trainer/
 
 ## 📚 Weiterführende Dokumentation
 
-### Framework-Dokumentation
-- **Django:** https://docs.djangoproject.com/
-- **Django REST Framework:** https://www.django-rest-framework.org/
-- **React:** https://react.dev/
-- **Vite:** https://vite.dev/
-- **Tailwind CSS:** https://tailwindcss.com/
-
 ### API Endpunkte
 
+#### Tasks (`/api/tasks/`)
 | Endpoint | Methode | Beschreibung |
 |----------|---------|--------------|
-| `/api/tasks/` | GET | Alle Tasks abrufen |
-| `/api/tasks/{id}/` | GET | Einen Task abrufen |
-| `/api/tasks/next/` | GET | Nächste adaptive Aufgabe |
-| `/api/users/` | GET | Alle User abrufen |
-| `/api/users/me/` | GET | Aktueller User |
-| `/api/attempts/` | POST | Lösung einreichen |
+| `/api/tasks/` | GET | Alle Tasks auflisten |
+| `/api/tasks/` | POST | Task manuell erstellen |
+| `/api/tasks/{id}/` | GET | Einzelne Task abrufen |
+| `/api/tasks/{id}/` | DELETE | Task löschen |
+| `/api/tasks/generate/` | POST | Vorgenerierte Task abrufen |
+| `/api/tasks/pool_status/` | GET | Status des Task-Pools |
+| `/api/tasks/by_type/` | GET | Tasks nach Typ/Level filtern |
+
+#### Authentifizierung (`/api/auth/`)
+| Endpoint | Methode | Beschreibung |
+|----------|---------|--------------|
+| `/api/auth/register/` | POST | Neuen Benutzer registrieren |
+| `/api/auth/login/` | POST | Benutzer anmelden |
+| `/api/auth/logout/` | POST | Benutzer abmelden |
+| `/api/auth/me/` | GET | Aktuellen Benutzer abrufen |
+| `/api/auth/password-change/` | POST | Passwort ändern |
+| `/api/auth/reset-progress/` | POST | Lernfortschritt zurücksetzen |
+| `/api/auth/avatar/` | POST | Avatar aktualisieren |
+| `/api/auth/avatar/random/` | POST | Zufälligen Avatar generieren |
+
+#### Benutzer (`/api/users/`)
+| Endpoint | Methode | Beschreibung |
+|----------|---------|--------------|
+| `/api/users/` | GET | Alle Benutzer auflisten |
+| `/api/users/{id}/` | GET | Einzelnen Benutzer abrufen |
+| `/api/users/me/` | GET | Aktuellen Benutzer abrufen |
+
+#### Aufgaben lösen (`/api/`)
+| Endpoint | Methode | Beschreibung |
+|----------|---------|--------------|
+| `/api/solve/` | POST | Lösung einer Aufgabe einreichen |
+| `/api/feedback/` | POST | Feedback zu einer Antwort abrufen |
+| `/api/solution/{task_id}/` | GET | Komplette Lösung einer Aufgabe |
 
 ### Troubleshooting
 
@@ -425,18 +460,26 @@ cd frontend && npm install
 ```
 
 ---
-
-## 📝 License
-
-Dieses Projekt ist im Rahmen einer Bachelorarbeit an der Hochschule Karlsruhe entstanden.
+### Framework-Dokumentation
+- **Django:** https://docs.djangoproject.com/
+- **Django REST Framework:** https://www.django-rest-framework.org/
+- **React:** https://react.dev/
+- **Vite:** https://vite.dev/
+- **Tailwind CSS:** https://tailwindcss.com/
 
 ---
 
 ## 👥 Kontakt
 
-**Hochschule Karlsruhe – Technik und Wirtschaft**
+**Autor:** Sinan Kammerer  
+📧 kasi1021@h-ka.de
 
+**Betreuung:** Prof. Dr. Reimar Hofmann  
+📧 hore0001@h-ka.de
+
+---
+
+**Hochschule Karlsruhe – Technik und Wirtschaft**  
 📍 Moltkestraße 30, 76133 Karlsruhe  
-📞 +49 721 925-0  
-📧 info@h-ka.de  
 🌐 https://www.h-ka.de
+
