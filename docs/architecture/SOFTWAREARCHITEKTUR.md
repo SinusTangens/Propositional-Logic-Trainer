@@ -1,6 +1,6 @@
 # Softwarearchitektur – Propositional Logic Trainer
 
-Dieses Dokument beschreibt die technische Architektur der Anwendung für Außenstehende (insbesondere Prüfer). Es erklärt die Struktur, Verantwortlichkeiten und Zusammenhänge aller Komponenten.
+Dieses Dokument beschreibt die technische Architektur der Anwendung. Es erklärt die Struktur, Verantwortlichkeiten und Zusammenhänge aller Komponenten.
 
 ---
 
@@ -28,31 +28,26 @@ Der **Propositional Logic Trainer** ist eine Web-Anwendung zum Erlernen aussagen
 - **Core**: Python-Module für die mathematische Logik (unabhängig von Django)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────────┐
 │                          GESAMTARCHITEKTUR                               │
-├─────────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│   ┌──────────────────┐                    ┌──────────────────────────┐  │
-│   │  React Frontend  │  ◄── REST API ──►  │    Django Backend       │  │
-│   │  (TypeScript)    │       (JSON)        │    (Python)             │  │
-│   │                  │                     │                         │  │
-│   │  - UI Components │                     │  ┌─────────────────────┐│  │
-│   │  - State Mgmt    │                     │  │   Django Apps       ││  │
-│   │  - API Service   │                     │  │   (API Layer)       ││  │
-│   └──────────────────┘                     │  └─────────────────────┘│  │
-│                                            │            │            │  │
-│                                            │            ▼            │  │
-│                                            │  ┌─────────────────────┐│  │
-│                                            │  │   Core Logic        ││  │
-│                                            │  │   (Business Logic)  ││  │
-│                                            │  └─────────────────────┘│  │
-│                                            │            │            │  │
-│                                            │            ▼            │  │
-│                                            │  ┌─────────────────────┐│  │
-│                                            │  │   SQLite Database   ││  │
-│                                            │  └─────────────────────┘│  │
-│                                            └──────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────┘
+│   ┌──────────────────┐                    ┌───────────────────────────┐  │
+│   │  React Frontend  │  ◄── REST API ──►  │     Django Backend        │  │
+│   │  (TypeScript)    │       (JSON)       │     (Python)              │  │
+│   │                  │                    │                           │  │
+│   │  - UI Components │                    │  ┌─────────────────────┐  │  │
+│   │  - State Mgmt    │                    │  │    Django Apps      │  │  │
+│   │  - API Service   │                    │  │    (API Layer)      │  │  │
+│   └──────────────────┘                    │  └──────────┬──────────┘  │  │
+│                                           │       ┌─────┴─────┐       │  │
+│                                           │       ▼           ▼       │  │
+│                                           │  ┌────────┐ ┌──────────┐  │  │
+│                                           │  │ SQLite │ │Core Logic│  │  │
+│                                           │  │   DB   │ │ (Solver) │  │  │
+│                                           │  └────────┘ └──────────┘  │  │
+│                                           └───────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -91,51 +86,52 @@ Django-Projektkonfiguration:
 
 ### 3.2 Verzeichnis `apps/`
 
-Enthält die Django-Apps, die die REST API bereitstellen:
+Enthält die Django-Apps, die die REST API bereitstellen.
 
-#### `apps/generate_tasks/` – Aufgabenverwaltung
+#### Allgemeine Struktur einer Django-App
 
-| Datei | Funktion |
-|-------|----------|
-| `models.py` | **Task-Model**: Speichert generierte Aufgaben (Prämissen, Variablen, Level) |
-| `views.py` | **TaskViewSet**: CRUD-Operationen + `/generate/` + `/pool_status/` |
-| `serializers.py` | JSON-Serialisierung der Task-Objekte |
-| `services.py` | **TaskPreGenerationService**: Singleton für Task-Pool-Management |
-| `signals.py` | Django Signal: Triggert Nachgenerierung nach Attempt-Erstellung |
-| `urls.py` | URL-Routing für `/api/tasks/` |
-| `management/commands/` | Django CLI Command `prefill_tasks` |
-
-**Schlüsselkonzept – Pre-Generation:**  
-Tasks werden vorab generiert und in der Datenbank gespeichert. Wenn ein Benutzer eine Aufgabe anfordert, wird eine bereits generierte Task aus dem Pool entnommen. Dies vermeidet lange Wartezeiten bei komplexen Aufgabentypen (Case Split kann Sekunden dauern).
-
-#### `apps/users/` – Benutzerverwaltung
+Jede App folgt der gleichen Grundstruktur mit standardisierten Dateien:
 
 | Datei | Funktion |
 |-------|----------|
-| `models.py` | **User** (erweiterter Django-User), **UserProgress** (Fortschritt pro Level), **Attempt** (Lösungsversuche) |
-| `views.py` | Auth-Endpoints (Register, Login, Logout), UserViewSet, Avatar-Endpoints |
-| `serializers.py` | Serialisierung für User, Progress, Attempt |
-| `urls.py` | URL-Routing für `/api/auth/` und `/api/users/` |
+| `models.py` | **Datenmodelle** – Definiert Datenbankstrukturen als Python-Klassen (Django ORM). Jede Klasse wird zu einer Tabelle. |
+| `views.py` | **Request-Handler** – Empfängt HTTP-Requests, verarbeitet sie und gibt Responses zurück. Enthält die API-Endpunkte. |
+| `serializers.py` | **Datenkonvertierung** – Wandelt Python-Objekte in JSON um (und umgekehrt). Validiert eingehende Daten. |
+| `urls.py` | **URL-Routing** – Ordnet URL-Pfade den entsprechenden Views zu (z.B. `/api/tasks/` → `TaskViewSet`). |
+| `admin.py` | **Admin-Oberfläche** – Registriert Models für das Django Admin Interface (Datenverwaltung im Browser). |
+| `apps.py` | **App-Konfiguration** – Metadaten der App (Name, Label). Wird von Django automatisch generiert. |
+| `tests.py` | **Unit-Tests** – Automatisierte Tests für die App-Funktionalität. |
+| `migrations/` | **Datenbank-Migrationen** – Versionierte Änderungen am Datenbankschema. Automatisch generiert bei Model-Änderungen. |
 
-**Schlüsselkonzept – Level-Tracking:**  
+#### Die vier Apps im Projekt
+
+| App | Zweck | Models | API-Endpunkte |
+|-----|-------|--------|---------------|
+| **generate_tasks** | Aufgabenverwaltung | `Task` | `/api/tasks/`, `/api/tasks/generate/`, `/api/tasks/pool_status/` |
+| **users** | Benutzerverwaltung | `User`, `UserProgress`, `Attempt` | `/api/auth/register/`, `/api/auth/login/`, `/api/auth/logout/`, `/api/auth/me/`, `/api/users/` |
+| **solve_tasks** | Lösungsverarbeitung | `SolutionCache` | `/api/solve/`, `/api/feedback/`, `/api/solution/` |
+| **feedback** | (Für zukünftiges Feedbacksystem) | – | – |
+
+#### App-spezifische Erweiterungen
+
+**generate_tasks** enthält zusätzliche Dateien:
+
+| Datei | Funktion |
+|-------|----------|
+| `services.py` | **TaskPreGenerationService** – Singleton für Task-Pool-Management |
+| `signals.py` | Django Signal – Triggert automatische Nachgenerierung nach jedem Lösungsversuch |
+| `management/commands/` | CLI-Command `prefill_tasks` für manuelles Auffüllen des Pools |
+
+#### Schlüsselkonzepte
+
+**Pre-Generation (generate_tasks):**  
+Tasks werden vorab generiert und in der Datenbank gespeichert. Wenn ein Benutzer eine Aufgabe anfordert, wird eine bereits generierte Task aus dem Pool entnommen. Dies vermeidet lange Wartezeiten bei komplexen Aufgabentypen.
+
+**Level-Tracking (users):**  
 `UserProgress` speichert den Fortschritt pro Aufgabentyp und Level. Erst nach X aufeinanderfolgenden korrekten Antworten wird das nächste Level freigeschaltet (konfigurierbar in `LEVEL_CONFIG`).
 
-#### `apps/solve_tasks/` – Lösungsverarbeitung
-
-| Datei | Funktion |
-|-------|----------|
-| `models.py` | **SolutionCache**: Speichert berechnete Lösungen für Performance |
-| `views.py` | **SolveTaskView**: Nimmt Antworten entgegen, vergleicht mit Lösung |
-|            | **GetFeedbackView**: Generiert detailliertes Feedback |
-|            | **GetSolutionView**: Gibt komplette Lösung zurück |
-| `urls.py` | URL-Routing für `/api/solve/`, `/api/feedback/`, `/api/solution/` |
-
-**Schlüsselkonzept – Caching:**  
+**Caching (solve_tasks):**  
 Da das Lösen einer Aufgabe rechenintensiv ist (Bucket Elimination), wird das Ergebnis gecacht. Bei wiederholten Anfragen wird der Cache verwendet.
-
-#### `apps/feedback/` – (Reserviert für zukünftige Erweiterungen)
-
-Aktuell leer. Geplant für erweiterte Feedback-Mechanismen.
 
 ---
 
@@ -159,10 +155,7 @@ Das `core/`-Verzeichnis enthält die mathematische Kernlogik, **komplett unabhä
 ```
 1. Wähle Variablen (A, B, C, ...) basierend auf Level
 2. Generiere zufällige SymPy-Formeln als Prämissen
-3. Prüfe ob Aufgabe:
-   a) Lösbar ist (mindestens ein Modell existiert)
-   b) Eindeutig genug ist (nicht alle Variablen beliebig)
-   c) Den Schwierigkeitskriterien entspricht
+3. Prüfe Aufgabe auf vordefinierte Kriterien
 4. Wiederhole bis gültige Aufgabe gefunden
 ```
 
@@ -171,7 +164,7 @@ Das `core/`-Verzeichnis enthält die mathematische Kernlogik, **komplett unabhä
 | Datei | Funktion |
 |-------|----------|
 | `BooleanTable.py` | Datenstruktur für Wahrheitstabellen (NumPy-basiert) |
-| `MarginalSolver.py` | **BucketElimination**: Implementiert den Shenoy-Shafer Algorithmus |
+| `MarginalSolver.py` | BucketElimination Solver  |
 
 **Bucket Elimination Algorithmus:**
 
@@ -208,6 +201,9 @@ Backward Pass (Bestimmung):
 | Verpasste Schlussfolgerung | User sagt Unbekannt, aber festgelegt | Hinweis auf zwingende Folgerung |
 | Falsche Belegung | User sagt True statt False | Korrektur mit Erklärung |
 
+**Hinweis zur Erweiterbarkeit:**  
+Dies ist die initiale Feedbacklogik. Bei zukünftigem Ausbau (z.B. personalisiertes Feedback, Lernstatistiken, adaptive Hinweise) soll diese Logik in der Django App `apps/feedback/` weitergeführt werden, um eine saubere Trennung zwischen Core-Algorithmen und anwendungsspezifischer Logik zu gewährleisten.
+
 ### 4.4 `core/tests/`
 
 | Datei | Funktion |
@@ -219,60 +215,102 @@ Backward Pass (Bestimmung):
 
 ## 5. Frontend-Struktur (React)
 
-### 5.1 `frontend/src/`
+### 5.1 Verzeichnis `frontend/`
 
-| Verzeichnis/Datei | Funktion |
-|-------------------|----------|
-| `main.tsx` | React Entry Point |
-| `App.tsx` | Haupt-Komponente, React Router Setup |
+Konfigurationsdateien im Root des Frontend-Verzeichnisses:
 
-### 5.2 `components/`
+| Datei | Funktion |
+|-------|----------|
+| `index.html` | HTML-Einstiegspunkt – lädt die React-App |
+| `package.json` | npm-Konfiguration: Dependencies, Scripts (`dev`, `build`, `preview`) |
+| `package-lock.json` | Lock-File für reproduzierbare Builds |
+| `vite.config.ts` | Vite-Konfiguration: Dev-Server, Proxy für `/api`, Build-Optionen |
+| `tsconfig.json` | TypeScript-Konfiguration für den Quellcode |
+| `tsconfig.node.json` | TypeScript-Konfiguration für Vite/Node-Umgebung |
+| `postcss.config.mjs` | PostCSS-Konfiguration für Tailwind CSS |
+| `.env.example` | Vorlage für Umgebungsvariablen |
+| `.gitignore` | Frontend-spezifische Git-Ignore-Regeln |
+| `dist/` | Build-Output (generiert durch `npm run build`) |
+| `public/` | Statische Assets (werden unverändert kopiert) |
+
+### 5.2 Verzeichnis `frontend/src/`
+
+Quellcode der React-Anwendung:
+
+| Datei | Funktion |
+|-------|----------|
+| `main.tsx` | **Entry Point** – Rendert die React-App in das DOM |
+| `App.tsx` | **Haupt-Komponente** – React Router Setup, Layout-Struktur |
+
+### 5.3 `src/components/`
 
 Wiederverwendbare UI-Komponenten:
 
 | Komponente | Funktion |
 |------------|----------|
-| `ui/` | Radix UI Primitives (Button, Card, Dialog, etc.) |
-| `AvatarEditor.tsx` | Komponente zur Avatar-Anpassung |
+| `ui/button.tsx` | Button-Komponente mit verschiedenen Varianten |
+| `ui/radio-group.tsx` | Radio-Button-Gruppe für Auswahloptionen |
+| `AvatarEditor.tsx` | Komponente zur Avatar-Anpassung (Farben, Accessoires) |
 | `CelebrationModal.tsx` | Erfolgs-Animation bei Level-Abschluss |
-| `SelectionCard.tsx` | Karte für Aufgabentyp-Auswahl |
+| `SelectionCard.tsx` | Karte für Aufgabentyp-Auswahl auf dem Lernpfad |
+| `LogicSymbolsLogo.tsx` | Logo-Komponente mit animierten Logiksymbolen |
+| `ScrollToTop.tsx` | Scrollt bei Routenwechsel automatisch nach oben |
 
-### 5.3 `pages/`
+### 5.4 `src/pages/`
 
 Seitenkomponenten (entsprechen Routen):
 
 | Seite | Route | Funktion |
 |-------|-------|----------|
-| `Lernpfad.tsx` | `/` | Übersicht der Aufgabentypen und Level |
-| `UnitPropagation.tsx` | `/unit-propagation/:level` | Interaktive Aufgabe (DIRECT_INFERENCE) |
-| `CaseSplit.tsx` | `/case-split/:level` | Interaktive Aufgabe (CASE_SPLIT) |
-| `Account.tsx` | `/account` | Profil, Statistiken, Avatar |
-| `Login.tsx` | `/login` | Anmeldung/Registrierung |
-| `Grundlagen.tsx` | `/grundlagen` | Theorie-Seite |
-| `FreiesUeben.tsx` | `/freies-ueben` | Übungsmodus ohne Fortschritt |
+| `Lernpfad.tsx` | `/lernpfad` | Übersicht der Aufgabentypen und Level (geschützt) |
+| `UnitPropagation.tsx` | `/unit-propagation` | Interaktive Aufgabe im Übungungsmodus (DIRECT_INFERENCE) |
+| `CaseSplit.tsx` | `/case-split` | Interaktive Aufgabe im Übungsmodus (CASE_SPLIT) |
+| `FreiesUeben.tsx` | `/freies-ueben` | Übungsmodus (wird freigeschaltet nach Abschluss des Lernpfades)|
+| `Account.tsx` | `/account` | Benutzerprofil, Statistiken, Avatar-Editor |
+| `Login.tsx` | `/login` | Anmeldung und Registrierung |
+| `Grundlagen.tsx` | `/grundlagen` | Theorie-Seite zur Aussagenlogik |
+| `Referenzen.tsx` | `/referenzen` | Vorlesungsunterlagen, Literatur, etc. |
+| `Datenschutz.tsx` | `/datenschutz` | Datenschutzerklärung |
+| `NotFound.tsx` | `*` | 404-Fehlerseite für unbekannte Routen |
 
-### 5.4 `services/`
+**Hinweis:** Die Startseite (`/`) wird direkt in `App.tsx` als `HomePage`-Komponente definiert und zeigt die Navigations-Karten (Lernpfad, Freies Üben, Grundlagen, Referenzen).
+
+### 5.5 `src/services/`
 
 | Datei | Funktion |
 |-------|----------|
-| `api.ts` | Zentraler API-Service (fetch-Wrapper, CSRF-Handling) |
+| `api.ts` | **Zentraler API-Service** – fetch-Wrapper mit automatischem CSRF-Token-Handling, Basis-URL-Konfiguration, Fehlerbehandlung |
 
-### 5.5 `contexts/`
+### 5.6 `src/contexts/`
 
 React Context für globalen State:
 
-| Context | Funktion |
-|---------|----------|
-| `AuthContext` | Authentifizierungsstatus, User-Objekt |
-| `ProgressContext` | Lernfortschritt des Benutzers |
+| Datei | Funktion |
+|-------|----------|
+| `AuthContext.tsx` | **Authentifizierungsstatus** – Stellt `user`, `login()`, `logout()`, `isAuthenticated` bereit. Speichert User-Daten und Fortschritt. |
 
-### 5.6 Weitere Verzeichnisse
+### 5.7 `src/lib/`
 
-| Verzeichnis | Funktion |
-|-------------|----------|
-| `lib/` | Utility-Funktionen (z.B. `cn()` für Tailwind-Klassen) |
-| `styles/` | Globale CSS-Dateien |
-| `assets/` | Statische Assets (Bilder, etc.) |
+| Datei | Funktion |
+|-------|----------|
+| `utils.ts` | Hilfsfunktionen, u.a. `cn()` für bedingte Tailwind-Klassennamen |
+
+### 5.8 `src/styles/`
+
+| Datei | Funktion |
+|-------|----------|
+| `index.css` | Globale CSS-Styles, Tailwind-Direktiven (`@tailwind base/components/utilities`) |
+
+### 5.9 `src/assets/`
+
+Statische Assets (Bilder):
+
+| Datei | Verwendung |
+|-------|------------|
+| `hka-logo.jpg` | HKA-Logo für Footer/Header |
+| `unit-prop-example.png` | Beispielbild für Unit Propagation Erklärung |
+| `case-split-example.png` | Beispielbild für Case Split Erklärung |
+| `index.ts` | Export-Datei für einfachen Import der Assets |
 
 ---
 
@@ -293,30 +331,30 @@ React Context für globalen State:
 └─────────────┘       │ created_at  │       └─────────────────┘
       │               └─────────────┘              │
       │                     │                      │
-      │    ┌────────────────┴──────────────┐      │
-      │    │                               │      │
-      ▼    ▼                               ▼      │
-┌─────────────────┐                ┌──────────────┴───┐
-│    Attempt      │                │  SolutionCache   │
-├─────────────────┤                ├──────────────────┤
-│ id              │                │ id               │
-│ user_id (FK)    │                │ task_id          │
-│ task_id (FK)    │                │ solver_name      │
-│ answers         │                │ result           │
-│ is_correct      │                │ created_at       │
-│ created_at      │                └──────────────────┘
+      │    ┌────────────────┴──────────────┐       │
+      │    │                               │       │
+      ▼    ▼                               ▼       │
+┌─────────────────┐                 ┌──────────────┴───┐
+│    Attempt      │                 │  SolutionCache   │
+├─────────────────┤                 ├──────────────────┤
+│ id              │                 │ id               │
+│ user_id (FK)    │                 │ task_id          │
+│ task_id (FK)    │                 │ solver_name      │
+│ answers         │                 │ result           │
+│ is_correct      │                 │ created_at       │
+│ created_at      │                 └──────────────────┘
 └─────────────────┘
 ```
 
 ### Modell-Beschreibungen
 
-| Modell | Beschreibung |
-|--------|--------------|
-| **User** | Erweiterter Django-User mit Statistiken und Avatar-Einstellungen |
-| **Task** | Gespeicherte Aufgabe mit Prämissen in zwei Formaten (lesbar + SymPy) |
-| **UserProgress** | Fortschritt eines Users pro Aufgabentyp (Level, Streak, Status) |
-| **Attempt** | Ein Lösungsversuch eines Users für eine Aufgabe |
-| **SolutionCache** | Gecachte Solver-Ergebnisse für Performance |
+| Modell | App | Beschreibung |
+|--------|-----|--------------|
+| **User** | `users` | Erweitertes Django-User-Modell (`AbstractUser`). Speichert neben Login-Daten auch Statistiken (`total_solved`, `correct_solved`, `current_streak`, `highscore_streak`) und Avatar-Einstellungen für DiceBear (Hautfarbe, Frisur, Kleidung, etc.). |
+| **UserProgress** | `users` | Fortschritt eines Nutzers pro Aufgabentyp. Enthält `current_level`, `correct_in_row` (Streak im aktuellen Level) und `is_completed`. Die Methode `record_answer()` verarbeitet Antworten und triggert Level-Aufstiege. |
+| **Attempt** | `users` | Einzelner Lösungsversuch. Verknüpft User und Task, speichert die abgegebene `solution` (JSON), ob sie `is_correct` war, und generiertes `feedback`. |
+| **Task** | `generate_tasks` | Vorgenerierte Aufgabe. Enthält `task_type`, `level`, `variables` und Prämissen in zwei Formaten: `premises` (lesbare Unicode-Symbole für Frontend) und `premises_sympy` (SymPy-Repräsentation für Solver). |
+| **SolutionCache** | `solve_tasks` | Optionaler Cache für berechnete Solver-Ergebnisse. Speichert `task_id`, `solver_name` und `result` (JSON). Vermeidet wiederholte Berechnungen für dieselbe Aufgabe. |
 
 ---
 
@@ -329,32 +367,32 @@ React Context für globalen State:
 │                    AUFGABENGENERIERUNG                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │
-│  │ DIFFICULTY_ │───►│ TaskGenerator│───►│ generierte SymPy-   │ │
-│  │ CONFIG      │    │             │    │ Formeln (Prämissen) │ │
-│  │ (Task.py)   │    │ (generate_  │    │                     │ │
-│  │             │    │ tasks.py)   │    │                     │ │
-│  └─────────────┘    └─────────────┘    └──────────┬──────────┘ │
+│  ┌─────────────┐    ┌─────────────┐     ┌─────────────────────┐ │
+│  │ DIFFICULTY_ │───►│TaskGenerator│───► │ generierte SymPy-   │ │
+│  │ CONFIG      │    │             │     │ Formeln (Prämissen) │ │
+│  │ (Task.py)   │    │ (generate_  │     │                     │ │
+│  │             │    │ tasks.py)   │     │                     │ │
+│  └─────────────┘    └─────────────┘     └──────────┬──────────┘ │
 │                                                    │            │
 │  Parameter:                                        ▼            │
-│  - Variablenanzahl        ┌───────────────────────────────────┐│
-│  - Prämissenanzahl        │ Validierung:                      ││
-│  - Formeltiefe            │ - Hat Lösung?                     ││
-│  - Erlaubte Operatoren    │ - Nicht-trivial?                  ││
-│  - Operator-Gewichte      │ - Level-adäquat?                  ││
-│                           └───────────────────────────────────┘│
+│  - Variablenanzahl         ┌───────────────────────────────────┐│
+│  - Prämissenanzahl         │ Validierung:                      ││
+│  - Formeltiefe             │ - Hat Lösung?                     ││
+│  - Erlaubte Operatoren     │ - Nicht-trivial?                  ││
+│  - Operator-Gewichte       │ - Level-adäquat?                  ││
+│                            └───────────────────────────────────┘│
 │                                        │                        │
 │                                        ▼                        │
-│                           ┌───────────────────────────────────┐│
-│                           │ Task-Objekt speichern in DB       ││
-│                           │ (apps/generate_tasks/models.py)   ││
-│                           └───────────────────────────────────┘│
+│                            ┌───────────────────────────────────┐│
+│                            │ Task-Objekt speichern in DB       ││
+│                            │ (apps/generate_tasks/models.py)   ││
+│                            └───────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 7.2 Pre-Generation Strategie
 
-**Problem:** CASE_SPLIT Level 3 kann mehrere Sekunden zur Generierung benötigen.
+**Problem:** Komplexere Aufagben haben eine lange Generationszeit.
 
 **Lösung:** Tasks werden vorab generiert und in einem Pool gehalten.
 
@@ -363,19 +401,19 @@ React Context für globalen State:
 │                    PRE-GENERATION POOL                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ Konfiguration: TARGET_TASKS_PER_COMBINATION = 200       │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Konfiguration: TARGET_TASKS_PER_COMBINATION = 200       │    │
+│  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  Pool-Status (Beispiel):                                        │
-│  ┌────────────────────┬───────────────────┬────────────────┐   │
-│  │ Kombination        │ Verfügbar         │ Status         │   │
-│  ├────────────────────┼───────────────────┼────────────────┤   │
-│  │ DIRECT_INFERENCE/1 │ 198/200           │ ✓              │   │
-│  │ DIRECT_INFERENCE/2 │ 200/200           │ ✓              │   │
-│  │ CASE_SPLIT/1       │ 45/200            │ Refill nötig   │   │
-│  │ CASE_SPLIT/3       │ 200/200           │ ✓              │   │
-│  └────────────────────┴───────────────────┴────────────────┘   │
+│  ┌────────────────────┬───────────────────┬────────────────┐    │
+│  │ Kombination        │ Verfügbar         │ Status         │    │
+│  ├────────────────────┼───────────────────┼────────────────┤    │
+│  │ DIRECT_INFERENCE/1 │ 200/200           │ ✓              │    │
+│  │ DIRECT_INFERENCE/2 │ 200/200           │ ✓              │    │
+│  │ CASE_SPLIT/1       │ 45/200            │ Refill nötig   │    │
+│  │ CASE_SPLIT/3       │ 200/200           │ ✓              │    │
+│  └────────────────────┴───────────────────┴────────────────┘    │
 │                                                                 │
 │  Nachfüll-Mechanismus:                                          │
 │  1. User löst Aufgabe → Attempt wird erstellt                   │
@@ -409,41 +447,59 @@ python manage.py prefill_tasks --status
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    LÖSUNGSVERIFIKATION                          │
+│                      LÖSUNGSVERIFIKATION                        │
+│                   "User löst eine Aufgabe"                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. User sendet Antworten                                       │
-│     POST /api/solve/ { task_id: 1, answers: {A: "wahr", ...} }  │
+│  1. Frontend sendet: POST /api/solve/ {task_id: 42, answers: {}}│
 │                          │                                      │
 │                          ▼                                      │
-│  2. Backend lädt Task aus DB                                    │
-│                          │                                      │
-│                          ▼                                      │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    API LAYER (Views)                    │    │
+│  │  - Authentifizierung prüfen                             │    │
+│  │  - Request validieren                                   │    │
+│  └─────────────────────┬───────────────────────────────────┘    │
+│                        │                                        │
+│                        ▼                                        │
+│  2. ┌──────────────────────────────────────┐                    │
+│     │ DATABASE: Task.objects.get(id=42)    │                    │
+│     └──────────────────┬───────────────────┘                    │
+│                        │                                        │
+│                        ▼                                        │
 │  3. Cache-Check: Lösung bereits berechnet?                      │
-│     ┌────────┬────────┐                                         │
-│     │  Ja    │  Nein  │                                         │
-│     └───┬────┴───┬────┘                                         │
-│         │        │                                              │
-│         │        ▼                                              │
-│         │   4. Core-Task erstellen                              │
-│         │      (DB-Task → SymPy-Formeln)                        │
-│         │        │                                              │
-│         │        ▼                                              │
-│         │   5. BucketElimination.solve()                        │
-│         │        │                                              │
-│         │        ▼                                              │
-│         │   6. Lösung cachen                                    │
-│         │        │                                              │
-│         └────────┼──────────────────────────────────────────    │
-│                  ▼                                              │
-│  7. Antworten vergleichen                                       │
-│     User-Antwort == Korrekte Lösung?                            │
-│                  │                                              │
-│                  ▼                                              │
-│  8. Fortschritt aktualisieren (UserProgress, Streak)            │
-│                  │                                              │
-│                  ▼                                              │
-│  9. Response mit Ergebnissen                                    │
+│     ┌────────────────────────────────────────┐                  │
+│     │  SolutionCache.objects.filter(task=42) │                  │
+│     └───────────┬────────────┬───────────────┘                  │
+│                 │            │                                  │
+│            [Cache Hit]  [Cache Miss]                            │
+│                 │            │                                  │
+│                 │            ▼                                  │
+│                 │  4. ┌─────────────────────────────────┐       │
+│                 │     │      CORE LOGIC (Solver)        │       │
+│                 │     │                                 │       │
+│                 │     │  - DB-Task → SymPy-Formeln      │       │
+│                 │     │  - BucketElimination.solve()    │       │
+│                 │     │  - FeedbackEngine.generate()    │       │
+│                 │     └──────────────┬──────────────────┘       │
+│                 │                    │                          │
+│                 │                    ▼                          │
+│                 │  5. Lösung in SolutionCache speichern         │
+│                 │                    │                          │
+│                 └────────┬───────────┘                          │
+│                          │                                      │
+│                          ▼                                      │
+│  6. Antworten vergleichen: User-Lösung == Korrekte Lösung?      │
+│                          │                                      │
+│                          ▼                                      │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    API LAYER (Views)                    │    │
+│  │  7. Fortschritt aktualisieren (UserProgress, Streak)    │    │
+│  │  8. Attempt in DB speichern                             │    │
+│  │  9. Response serialisieren                              │    │  
+│  └─────────────────────────────────────────────────────────┘    │
+│                          │                                      │
+│                          ▼                                      │
+│  10. Frontend erhält: {is_correct: true, feedback: {...}}       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -458,20 +514,20 @@ python manage.py prefill_tasks --status
 │  Eingabe: (Variable, User-Antwort, Korrekte Lösung)             │
 │                          │                                      │
 │                          ▼                                      │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │ Fallunterscheidung:                                       │ │
-│  │                                                           │ │
-│  │ A) User == Lösung   → "Korrekt!"                          │ │
-│  │                                                           │ │
-│  │ B) Lösung = None,   → "Unnötige Annahme"                  │ │
-│  │    User ≠ None        + Gegenbeispiel generieren          │ │
-│  │                                                           │ │
-│  │ C) Lösung ≠ None,   → "Verpasste Schlussfolgerung"        │ │
-│  │    User = None        + Hinweis auf zwingende Folgerung   │ │
-│  │                                                           │ │
-│  │ D) User ≠ Lösung    → "Falsche Belegung"                  │ │
-│  │    (beide ≠ None)     + Korrektur                         │ │
-│  └───────────────────────────────────────────────────────────┘ │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ Fallunterscheidung:                                       │  │
+│  │                                                           │  │
+│  │ A) User == Lösung   → "Korrekt!"                          │  │
+│  │                                                           │  │
+│  │ B) Lösung = None,   → "Unnötige Annahme"                  │  │
+│  │    User ≠ None        + Gegenbeispiel generieren          │  │
+│  │                                                           │  │
+│  │ C) Lösung ≠ None,   → "Verpasste Schlussfolgerung"        │  │
+│  │    User = None        + Hinweis auf zwingende Folgerung   │  │
+│  │                                                           │  │
+│  │ D) User ≠ Lösung    → "Falsche Belegung"                  │  │
+│  │    (beide ≠ None)     + Korrektur                         │  │
+│  └───────────────────────────────────────────────────────────┘  │
 │                                                                 │
 │  Gegenbeispiel-Generierung (Fall B):                            │
 │  - Suche Szenario wo Variable den gegenteiligen Wert hat        │
@@ -509,27 +565,42 @@ Die Anwendung verwendet **Session-basierte Authentifizierung**:
       │                                          │
 ```
 
-### 9.2 CORS-Konfiguration
+### 9.2 CORS- und Cookie-Konfiguration
 
 Im Development-Modus (Vite auf Port 5173, Django auf 8000) ist CORS konfiguriert:
 
-- `CORS_ALLOWED_ORIGINS` in `settings.py`
-- `CORS_ALLOW_CREDENTIALS = True` für Session-Cookies
-- Vite Proxy leitet `/api` an Django weiter
+| Einstellung | Wert | Zweck |
+|-------------|------|-------|
+| `CORS_ALLOWED_ORIGINS` | `localhost:5173`, `127.0.0.1:5173`, ... | Erlaubte Frontend-Origins |
+| `CORS_ALLOW_CREDENTIALS` | `True` | Ermöglicht Session-Cookies |
+| `CSRF_TRUSTED_ORIGINS` | `localhost:5173`, ... | Vertrauenswürdige Origins für CSRF |
+| `SESSION_COOKIE_SAMESITE` | `Lax` | Cookie nur bei Same-Site Requests |
+| `CSRF_COOKIE_HTTPONLY` | `False` | JavaScript muss CSRF-Token lesen können |
+
+**Vite Proxy:** Im Development leitet der Vite Dev-Server `/api`-Anfragen an Django (Port 8000) weiter, sodass Frontend und Backend unter derselben Origin erscheinen.
 
 ### 9.3 API-Endpunkte (Übersicht)
 
 | Kategorie | Endpunkt | Methode | Beschreibung |
 |-----------|----------|---------|--------------|
-| **Auth** | `/api/auth/register/` | POST | Registrierung |
-| | `/api/auth/login/` | POST | Anmeldung |
-| | `/api/auth/logout/` | POST | Abmeldung |
-| | `/api/auth/me/` | GET | Aktueller User |
-| **Tasks** | `/api/tasks/generate/` | POST | Task anfordern |
-| | `/api/tasks/pool_status/` | GET | Pool-Status |
-| **Solving** | `/api/solve/` | POST | Lösung einreichen |
-| | `/api/feedback/` | POST | Feedback abrufen |
-| | `/api/solution/{id}/` | GET | Lösung abrufen |
+| **Auth** | `/api/auth/register/` | POST | Neuen Benutzer registrieren |
+| | `/api/auth/login/` | POST | Anmeldung (Session erstellen) |
+| | `/api/auth/logout/` | POST | Abmeldung (Session beenden) |
+| | `/api/auth/me/` | GET | Aktueller User mit Fortschritt |
+| | `/api/auth/password-change/` | POST | Passwort ändern |
+| | `/api/auth/reset-progress/` | POST | Lernfortschritt zurücksetzen |
+| | `/api/auth/avatar/` | PUT | Avatar-Einstellungen speichern |
+| | `/api/auth/avatar/random/` | POST | Zufälligen Avatar generieren |
+| **Users** | `/api/users/` | GET | Benutzerliste (Admin) |
+| | `/api/users/{id}/` | GET | Benutzerdetails (Admin) |
+| **Tasks** | `/api/tasks/` | GET | Alle Tasks auflisten |
+| | `/api/tasks/{id}/` | GET | Task-Details abrufen |
+| | `/api/tasks/generate/` | POST | Neue Task aus Pool anfordern |
+| | `/api/tasks/pool_status/` | GET | Pre-Generation Pool Status |
+| | `/api/tasks/by_type/` | GET | Tasks nach Typ/Level filtern |
+| **Solving** | `/api/solve/` | POST | Lösung einreichen und prüfen |
+| | `/api/feedback/` | POST | Detailliertes Feedback abrufen |
+| | `/api/solution/{task_id}/` | GET | Komplette Lösung abrufen |
 
 ---
 
@@ -550,13 +621,16 @@ Im Development-Modus (Vite auf Port 5173, Django auf 8000) ist CORS konfiguriert
 
 ### 10.2 Frontend-Konfiguration
 
+Detaillierte Beschreibung siehe [Abschnitt 5.1](#51-verzeichnis-frontend). Die wichtigsten Konfigurationsdateien:
+
 | Datei | Funktion |
 |-------|----------|
-| `package.json` | npm-Dependencies und Scripts |
-| `vite.config.ts` | Vite Build-Konfiguration, Proxy-Setup |
-| `tsconfig.json` | TypeScript-Konfiguration |
-| `postcss.config.mjs` | PostCSS für Tailwind |
-| `tailwind.config.js` | Tailwind CSS Konfiguration |
+| `package.json` | npm-Dependencies und Scripts (`dev`, `build`, `preview`) |
+| `vite.config.ts` | Vite Build-Konfiguration, Proxy für `/api` → Django |
+| `tsconfig.json` | TypeScript-Compiler-Optionen |
+| `postcss.config.mjs` | PostCSS-Konfiguration (minimal, da Tailwind 4.x über Vite Plugin läuft) |
+
+**Hinweis:** Tailwind CSS 4.x benötigt keine separate `tailwind.config.js`. Die Konfiguration erfolgt über das Vite Plugin `@tailwindcss/vite` und CSS-Direktiven in `src/styles/index.css`.
 
 ### 10.3 Scripts-Verzeichnis
 

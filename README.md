@@ -190,6 +190,8 @@ python -m waitress --host=127.0.0.1 --port=8000 logic_trainer.wsgi:application
 
 ## 🏗️ Architektur
 
+> **Detaillierte Dokumentation:** Siehe [docs/architecture/SOFTWAREARCHITEKTUR.md](docs/architecture/SOFTWAREARCHITEKTUR.md) für die vollständige technische Architektur inkl. Schichtenmodell, Datenmodell, Core Logic Engine und API-Dokumentation.
+
 ### Development Mode
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -397,44 +399,6 @@ prop-logic-trainer/
 
 ## 📚 Weiterführende Dokumentation
 
-### API Endpunkte
-
-#### Tasks (`/api/tasks/`)
-| Endpoint | Methode | Beschreibung |
-|----------|---------|--------------|
-| `/api/tasks/` | GET | Alle Tasks auflisten |
-| `/api/tasks/` | POST | Task manuell erstellen |
-| `/api/tasks/{id}/` | GET | Einzelne Task abrufen |
-| `/api/tasks/{id}/` | DELETE | Task löschen |
-| `/api/tasks/generate/` | POST | Vorgenerierte Task abrufen |
-| `/api/tasks/pool_status/` | GET | Status des Task-Pools |
-| `/api/tasks/by_type/` | GET | Tasks nach Typ/Level filtern |
-
-#### Authentifizierung (`/api/auth/`)
-| Endpoint | Methode | Beschreibung |
-|----------|---------|--------------|
-| `/api/auth/register/` | POST | Neuen Benutzer registrieren |
-| `/api/auth/login/` | POST | Benutzer anmelden |
-| `/api/auth/logout/` | POST | Benutzer abmelden |
-| `/api/auth/me/` | GET | Aktuellen Benutzer abrufen |
-| `/api/auth/password-change/` | POST | Passwort ändern |
-| `/api/auth/reset-progress/` | POST | Lernfortschritt zurücksetzen |
-| `/api/auth/avatar/` | POST | Avatar aktualisieren |
-| `/api/auth/avatar/random/` | POST | Zufälligen Avatar generieren |
-
-#### Benutzer (`/api/users/`)
-| Endpoint | Methode | Beschreibung |
-|----------|---------|--------------|
-| `/api/users/` | GET | Alle Benutzer auflisten |
-| `/api/users/{id}/` | GET | Einzelnen Benutzer abrufen |
-| `/api/users/me/` | GET | Aktuellen Benutzer abrufen |
-
-#### Aufgaben lösen (`/api/`)
-| Endpoint | Methode | Beschreibung |
-|----------|---------|--------------|
-| `/api/solve/` | POST | Lösung einer Aufgabe einreichen |
-| `/api/feedback/` | POST | Feedback zu einer Antwort abrufen |
-| `/api/solution/{task_id}/` | GET | Komplette Lösung einer Aufgabe |
 
 ### Troubleshooting
 
