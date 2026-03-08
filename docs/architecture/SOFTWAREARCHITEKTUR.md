@@ -63,12 +63,6 @@ Die Anwendung folgt einer **3-Schichten-Architektur** mit zusätzlicher Trennung
 | **Geschäftslogik** | Python (core/) | Aufgabengenerierung, Solver, Feedback |
 | **Persistenz** | Django ORM + SQLite | Datenhaltung, Models |
 
-### Warum diese Trennung?
-
-- **Core ist Django-unabhängig**: Die mathematische Logik kann ohne Web-Framework getestet werden
-- **API ist austauschbar**: Die REST-Schicht könnte durch GraphQL ersetzt werden
-- **Frontend ist entkoppelt**: Könnte durch eine Mobile-App ersetzt werden
-
 ---
 
 ## 3. Backend-Struktur (Django)
@@ -262,7 +256,7 @@ Seitenkomponenten (entsprechen Routen):
 
 | Seite | Route | Funktion |
 |-------|-------|----------|
-| `Lernpfad.tsx` | `/lernpfad` | Übersicht der Aufgabentypen und Level (geschützt) |
+| `Lernpfad.tsx` | `/lernpfad` | Lernpfadmodus |
 | `UnitPropagation.tsx` | `/unit-propagation` | Interaktive Aufgabe im Übungungsmodus (DIRECT_INFERENCE) |
 | `CaseSplit.tsx` | `/case-split` | Interaktive Aufgabe im Übungsmodus (CASE_SPLIT) |
 | `FreiesUeben.tsx` | `/freies-ueben` | Übungsmodus (wird freigeschaltet nach Abschluss des Lernpfades)|
@@ -392,9 +386,9 @@ Statische Assets (Bilder):
 
 ### 7.2 Pre-Generation Strategie
 
-**Problem:** Komplexere Aufagben haben eine lange Generationszeit.
+**Problem:** Komplexere Aufgaben haben eine lange Generationszeit.
 
-**Lösung:** Tasks werden vorab generiert und in einem Pool gehalten.
+**Lösung:** Tasks werden vorab generiert und in einem Pool gehalten. Jeder User hat seinen eigenen "virtuellen" Pool: Eine Task gilt als "ungelöst" für einen User, solange dieser noch keinen Attempt für diese Task hat.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -402,34 +396,41 @@ Statische Assets (Bilder):
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ Konfiguration: TARGET_TASKS_PER_COMBINATION = 200       │    │
+│  │ Konfiguration:                                          │    │
+│  │   TARGET_TASKS_PER_COMBINATION = 200 (initialer Pool)   │    │
+│  │   REFILL_BATCH_SIZE = 20 (Nachfüll-Batch)               │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  Pool-Status (Beispiel):                                        │
 │  ┌────────────────────┬───────────────────┬────────────────┐    │
-│  │ Kombination        │ Verfügbar         │ Status         │    │
+│  │ Kombination        │ Gesamt im Pool    │ Status         │    │
 │  ├────────────────────┼───────────────────┼────────────────┤    │
-│  │ DIRECT_INFERENCE/1 │ 200/200           │ ✓              │    │
-│  │ DIRECT_INFERENCE/2 │ 200/200           │ ✓              │    │
-│  │ CASE_SPLIT/1       │ 45/200            │ Refill nötig   │    │
-│  │ CASE_SPLIT/3       │ 200/200           │ ✓              │    │
+│  │ DIRECT_INFERENCE/1 │ 200               │ ✓              │    │
+│  │ DIRECT_INFERENCE/2 │ 215               │ ✓              │    │
+│  │ CASE_SPLIT/1       │ 200               │ ✓              │    │
+│  │ CASE_SPLIT/3       │ 220               │ ✓              │    │
 │  └────────────────────┴───────────────────┴────────────────┘    │
 │                                                                 │
-│  Nachfüll-Mechanismus:                                          │
-│  1. User löst Aufgabe → Attempt wird erstellt                   │
-│  2. Django Signal triggert (signals.py)                         │
-│  3. Prüfung: Pool < TARGET?                                     │
-│  4. Wenn ja: Async-Thread generiert fehlende Tasks              │
+│  User-spezifische Zuweisung:                                    │
+│  - Jeder User sieht nur Tasks, die er noch nicht versucht hat   │
+│  - Die selbe Task kann von mehreren Usern gelöst werden           │
+│  - Pool wächst über 200 hinaus durch Batch-Nachfüllung          │
+│                                                                 │
+│  Nachfüll-Mechanismus (Batch-Regeneration):                     │
+│  1. User fordert Task an → View prüft verfügbare Tasks für User │
+│  2. Falls Pool für diesen User erschöpft:                       │
+│     → 20 neue Tasks werden synchron generiert                   │
+│  3. Eine zufällige Task aus dem Pool wird zurückgegeben         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 7.3 CLI-Command `prefill_tasks`
 
-Ermöglicht manuelles Auffüllen des Pools:
+Ermöglicht manuelles Auffüllen des Aufgaben Pools:
 
 ```bash
-# Alle Kombinationen parallel auffüllen
+# Alle Kombinationen parallel auffüllen (mit Live-Fortschrittsanzeige)
 python manage.py prefill_tasks
 
 # Nur bestimmte Kombination
@@ -438,6 +439,16 @@ python manage.py prefill_tasks --type CASE_SPLIT --level 2
 # Status anzeigen
 python manage.py prefill_tasks --status
 ```
+
+**Beispielausgabe:**
+```
+DIRECT_INFERENCE Lv1: 100%|████████████████████| 200/200 [00:45<00:00]
+DIRECT_INFERENCE Lv2: 100%|████████████████████| 200/200 [01:12<00:00]
+CASE_SPLIT Lv1:        78%|███████████████▌    | 156/200 [02:30<00:42]
+CASE_SPLIT Lv2:        45%|█████████           |  90/200 [01:48<02:12]
+```
+
+**Hinweis:** Das Ausführen von `prefill_tasks` nach dem Setup wird empfohlen, um initiale Wartezeiten beim ersten Aufruf zu vermeiden. Ohne Pre-Fill werden Tasks bei Bedarf on-demand generiert.
 
 ---
 
@@ -640,16 +651,3 @@ Detaillierte Beschreibung siehe [Abschnitt 5.1](#51-verzeichnis-frontend). Die w
 | `start-dev.ps1` / `start-dev.sh` | Startet Dev-Server (Frontend + Backend) |
 | `start-production.ps1` / `start-production.sh` | Startet Production-Server |
 
----
-
-## Zusammenfassung
-
-Der Propositional Logic Trainer kombiniert moderne Web-Technologien mit mathematischer Logik:
-
-1. **Klare Trennung** zwischen UI (React), API (Django) und Logik (Core)
-2. **Performance durch Pre-Generation** und Caching
-3. **Didaktisches Feedback** durch FeedbackEngine mit Gegenbeispielen
-4. **Skalierbarer Pool** mit automatischer Nachgenerierung
-5. **Wartbarkeit** durch modulare Architektur und Tests
-
-Die Architektur ermöglicht einfache Erweiterungen (neue Aufgabentypen, zusätzliche Solver, Mobile-App) ohne grundlegende Änderungen.

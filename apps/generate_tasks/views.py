@@ -5,7 +5,7 @@ from sympy import srepr
 
 from .models import Task
 from .serializers import TaskSerializer
-from .services import task_pregeneration_service, TARGET_TASKS_PER_COMBINATION
+from .services import task_pregeneration_service, TARGET_TASKS_PER_COMBINATION, REFILL_BATCH_SIZE
 
 from core.task_generator.Task import TaskType, DIFFICULTY_CONFIG
 from core.task_generator.generate_tasks import TaskGenerator, print_logical_pretty
@@ -60,15 +60,28 @@ class TaskViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Versuche vorgenerierte Task zu holen
-        db_task = task_pregeneration_service.get_random_unsolved_task(task_type_str, level)
+        # User-spezifische Task-Auswahl
+        user_id = request.user.id if request.user.is_authenticated else None
+        
+        if user_id:
+            # Eingeloggter User: Hole Task die dieser User noch nicht gelöst hat
+            db_task = task_pregeneration_service.get_random_unsolved_task_for_user(task_type_str, level, user_id)
+        else:
+            # Nicht eingeloggt: Hole beliebige Task aus dem Pool
+            db_task = Task.objects.filter(task_type=task_type_str, level=level).order_by('?').first()
         
         if db_task:
-            # Vorgenerierte Task gefunden → schnelle Antwort
+            # Task gefunden → schnelle Antwort
             serializer = self.get_serializer(db_task)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        # Fallback: On-Demand-Generierung (Pool ist leer)
+        # Pool für diesen User ist leer (oder komplett leer)
+        # → Batch-Nachgenerierung starten + 1 On-Demand für sofortige Antwort
+        if user_id:
+            # Asynchron 20 neue Tasks generieren
+            task_pregeneration_service.trigger_async_refill(task_type_str, level, count=REFILL_BATCH_SIZE)
+        
+        # On-Demand: 1 Task sofort generieren für Response
         try:
             db_task = task_pregeneration_service.generate_single_task(task_type, level)
         except Exception as e:
@@ -88,22 +101,24 @@ class TaskViewSet(viewsets.ModelViewSet):
         Response:
         {
             "target_per_combination": 200,
+            "refill_batch_size": 20,
             "combinations": [
-                {"task_type": "DIRECT_INFERENCE", "level": 1, "unsolved_count": 200, ...},
+                {"task_type": "DIRECT_INFERENCE", "level": 1, "total_count": 200, ...},
                 ...
             ],
-            "total_unsolved": 1400,
+            "total_tasks": 1400,
             "total_target": 1400
         }
         """
         status_list = task_pregeneration_service.get_all_combinations_status()
-        total_unsolved = sum(s['unsolved_count'] for s in status_list)
+        total_tasks = sum(s['total_count'] for s in status_list)
         total_target = sum(s['target'] for s in status_list)
         
         return Response({
             'target_per_combination': TARGET_TASKS_PER_COMBINATION,
+            'refill_batch_size': REFILL_BATCH_SIZE,
             'combinations': status_list,
-            'total_unsolved': total_unsolved,
+            'total_tasks': total_tasks,
             'total_target': total_target
         })
 

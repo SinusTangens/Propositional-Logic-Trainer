@@ -1,35 +1,37 @@
 """
-Signals für automatische Task-Nachgenerierung
+Signals für Task-Logging
 
-Wird ausgelöst wenn ein Attempt erstellt wird (= Task wurde "verbraucht").
+Hinweis: Die automatische Nachgenerierung wurde entfernt.
+Tasks werden nun user-spezifisch verwaltet:
+- Jeder User hat seinen eigenen "ungelösten" Pool
+- Nachgenerierung erfolgt im View wenn ein User alle Tasks eines Levels gelöst hat
+- Batch-Größe: REFILL_BATCH_SIZE (default: 20)
 """
 import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from apps.users.models import Attempt
-from .services import task_pregeneration_service
 
 
 logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=Attempt)
-def trigger_task_refill_on_attempt(sender, instance: Attempt, created: bool, **kwargs):
+def log_attempt_created(sender, instance: Attempt, created: bool, **kwargs):
     """
-    Wird nach jedem neuen Attempt ausgelöst.
+    Loggt die Erstellung eines neuen Attempts.
     
-    Wenn der Attempt neu erstellt wurde, wird geprüft ob Tasks nachgefüllt
-    werden müssen und ggf. eine asynchrone Nachgenerierung gestartet.
+    Die automatische Nachgenerierung wurde entfernt, da Tasks nun
+    user-spezifisch verwaltet werden. Nachgenerierung erfolgt im View
+    wenn ein User alle verfügbaren Tasks eines Levels gelöst hat.
     """
     if not created:
         return
     
     task = instance.task
-    task_type = task.task_type
-    level = task.level
-    
-    # Prüfe ob Nachgenerierung nötig ist
-    if task_pregeneration_service.needs_refill(task_type, level):
-        logger.info(f"Task-Refill nötig für {task_type} Level {level}")
-        task_pregeneration_service.trigger_async_refill(task_type, level)
+    user = instance.user
+    logger.debug(
+        f"Attempt erstellt: User {user.username} für Task {task.id} "
+        f"({task.task_type} Level {task.level})"
+    )

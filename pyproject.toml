@@ -16,6 +16,7 @@ dependencies = [
     "numpy>=1.26.4",
     "python-dotenv>=1.0.0",
     "requests>=2.31.0",
+    "tqdm>=4.66.0",
     "gunicorn>=21.0.0",
     "waitress>=3.0.0",
     "whitenoise>=6.6.0",

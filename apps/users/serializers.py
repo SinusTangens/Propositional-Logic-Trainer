@@ -26,7 +26,7 @@ class AvatarSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'avatar_skin_color', 'avatar_hair_color', 'avatar_top',
-            'avatar_accessories', 'avatar_facial_hair', 'avatar_clothing',
+            'avatar_accessories', 'avatar_facial_hair', 'avatar_facial_hair_color', 'avatar_clothing',
             'avatar_clothing_color', 'avatar_eyes', 'avatar_eyebrows', 'avatar_mouth',
             'avatar_url'
         ]
@@ -70,6 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
             'top': obj.avatar_top,
             'accessories': obj.avatar_accessories,
             'facialHair': obj.avatar_facial_hair,
+            'facialHairColor': obj.avatar_facial_hair_color,
             'clothing': obj.avatar_clothing,
             'clothingColor': obj.avatar_clothing_color,
             'eyes': obj.avatar_eyes,

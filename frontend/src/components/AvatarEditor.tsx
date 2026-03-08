@@ -197,6 +197,7 @@ export default function AvatarEditor({ isOpen, onClose, currentAvatar, onAvatarU
     top: currentAvatar.top,
     accessories: currentAvatar.accessories,
     facialHair: currentAvatar.facialHair,
+    facialHairColor: currentAvatar.facialHairColor || '',
     clothing: currentAvatar.clothing,
     clothingColor: currentAvatar.clothingColor,
     eyes: currentAvatar.eyes,
@@ -217,6 +218,7 @@ export default function AvatarEditor({ isOpen, onClose, currentAvatar, onAvatarU
         top: currentAvatar.top,
         accessories: currentAvatar.accessories,
         facialHair: currentAvatar.facialHair,
+        facialHairColor: currentAvatar.facialHairColor || '',
         clothing: currentAvatar.clothing,
         clothingColor: currentAvatar.clothingColor,
         eyes: currentAvatar.eyes,
@@ -253,7 +255,6 @@ export default function AvatarEditor({ isOpen, onClose, currentAvatar, onAvatarU
       `clothing=${avatar.clothing}`,
       `clothesColor=${avatar.clothingColor}`,
     ];
-    // Optionale Felder nur hinzufügen wenn gesetzt
     if (avatar.accessories) {
       params.push(`accessories=${avatar.accessories}`);
       params.push('accessoriesProbability=100');
@@ -262,11 +263,22 @@ export default function AvatarEditor({ isOpen, onClose, currentAvatar, onAvatarU
       params.push(`facialHair=${avatar.facialHair}`);
       params.push('facialHairProbability=100');
     }
+    if (avatar.facialHairColor) {
+      params.push(`facialHairColor=${avatar.facialHairColor}`);
+    }
     setPreviewUrl(`https://api.dicebear.com/9.x/avataaars/svg?${params.join('&')}`);
   }, [avatar]);
 
   const handleOptionSelect = (field: AvatarField, value: string) => {
-    setAvatar(prev => ({ ...prev, [field]: value }));
+    if (field === 'hairColor') {
+      setAvatar(prev => ({
+        ...prev,
+        hairColor: value,
+        facialHairColor: value // Bartfarbe immer Haarfarbe
+      }));
+    } else {
+      setAvatar(prev => ({ ...prev, [field]: value }));
+    }
     setError(null);
   };
 
@@ -283,6 +295,7 @@ export default function AvatarEditor({ isOpen, onClose, currentAvatar, onAvatarU
       top: getRandomOption(AVATAR_OPTIONS.top.options),
       accessories: getRandomOption(AVATAR_OPTIONS.accessories.options),
       facialHair: getRandomOption(AVATAR_OPTIONS.facialHair.options),
+      facialHairColor: getRandomOption(AVATAR_OPTIONS.hairColor.options), // Bartfarbe = Haarfarbe
       clothing: getRandomOption(AVATAR_OPTIONS.clothing.options),
       clothingColor: getRandomOption(AVATAR_OPTIONS.clothingColor.options),
       eyes: getRandomOption(AVATAR_OPTIONS.eyes.options),

@@ -169,8 +169,9 @@ class TaskPoolStatusAPITest(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('target_per_combination', response.data)
+        self.assertIn('refill_batch_size', response.data)
         self.assertIn('combinations', response.data)
-        self.assertIn('total_unsolved', response.data)
+        self.assertIn('total_tasks', response.data)
     
     def test_pool_status_counts_correctly(self):
         """Test: Pool-Status zählt Tasks korrekt."""
@@ -179,4 +180,4 @@ class TaskPoolStatusAPITest(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Sollte mindestens die 5 erstellten Tasks zählen
-        self.assertGreaterEqual(response.data['total_unsolved'], 5)
+        self.assertGreaterEqual(response.data['total_tasks'], 5)

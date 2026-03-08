@@ -116,7 +116,6 @@ Komplexere Aufgaben (insbesondere CASE_SPLIT) können bei der ersten Anfrage lan
 python manage.py prefill_tasks
 ```
 
-Das ist **optional**, aber **empfohlen**, damit die App später responsiv läuft.
 
 ---
 
@@ -198,16 +197,16 @@ python -m waitress --host=127.0.0.1 --port=8000 logic_trainer.wsgi:application
 │                      DEVELOPMENT MODE                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌─────────────────────┐         ┌──────────────────────┐      │
-│  │  React Frontend     │   API   │  Django Backend      │      │
-│  │  Port 5173          │ ◄─────► │  Port 8000           │      │
-│  │  (Vite Hot Reload)  │  JSON   │  (REST API + Admin)  │      │
-│  └─────────────────────┘         └──────────────────────┘      │
+│  ┌─────────────────────┐         ┌──────────────────────┐       │
+│  │  React Frontend     │   API   │  Django Backend      │       │
+│  │  Port 5173          │ ◄─────► │  Port 8000           │       │
+│  │  (Vite Hot Reload)  │  JSON   │  (REST API + Admin)  │       │
+│  └─────────────────────┘         └──────────────────────┘       │
 │       npm run dev                 python manage.py runserver    │
 │                                                                 │
-│  ✅ Hot Reload - Änderungen sofort sichtbar                     │
-│  ✅ Schnelle Entwicklung                                        │
-│  ❌ 2 Terminal-Fenster nötig                                    │
+│   - Hot Reload - Änderungen sofort sichtbar                     │
+│   - Schnelle Entwicklung                                        │
+│   - 2 Terminal-Fenster nötig                                    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -228,9 +227,9 @@ python -m waitress --host=127.0.0.1 --port=8000 logic_trainer.wsgi:application
 │         │  └─ Static Files (/static/)        │                  │
 │         └────────────────────────────────────┘                  │
 │                                                                 │
-│  ✅ Ein Server - einfaches Deployment                           │
-│  ✅ Professionell für Präsentationen                            │
-│  ❌ Nach Frontend-Änderungen: Build nötig                       │
+│   - Ein Server - einfaches Deployment                           │
+│   - Professionell für Präsentationen                            │
+│   - Nach Frontend-Änderungen: Build nötig                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```

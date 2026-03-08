@@ -1,8 +1,12 @@
 """
 Management Command: prefill_tasks
 
-Füllt den Task-Pool auf TARGET_TASKS_PER_COMBINATION (200) ungelöste Tasks
+Füllt den Task-Pool auf TARGET_TASKS_PER_COMBINATION (200) Tasks
 pro task_type/level Kombination auf.
+
+Hinweis: Tasks werden user-spezifisch verwaltet. Jeder User hat seinen
+eigenen "ungelösten" Pool. Nachgenerierung erfolgt automatisch wenn ein
+User alle verfügbaren Tasks eines Levels gelöst hat (Batch-Größe: 20).
 
 Verwendung:
     python manage.py prefill_tasks              # Alle Kombinationen parallel
@@ -12,14 +16,17 @@ Verwendung:
     python manage.py prefill_tasks --workers 4  # Anzahl paralleler Prozesse (Default: CPU-Kerne)
 """
 import multiprocessing
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Process, Queue
+from queue import Empty
 from django.core.management.base import BaseCommand
+from tqdm import tqdm
+import time
 
 from apps.generate_tasks.services import task_pregeneration_service, TARGET_TASKS_PER_COMBINATION
 from core.task_generator.Task import get_all_task_types, get_levels_for_task_type
 
 # Worker-Funktion aus separatem Modul (keine Django-Imports auf Modul-Ebene)
-from .prefill_worker import refill_worker
+from .prefill_worker import refill_worker, worker_wrapper
 
 
 class Command(BaseCommand):
@@ -65,7 +72,7 @@ class Command(BaseCommand):
             return
         
         self.stdout.write(self.style.NOTICE(
-            f'Ziel: {TARGET_TASKS_PER_COMBINATION} ungelöste Tasks pro Kombination\n'
+            f'Ziel: {TARGET_TASKS_PER_COMBINATION} Tasks pro Kombination\n'
         ))
         
         if filter_type and filter_level:
@@ -86,11 +93,11 @@ class Command(BaseCommand):
         self.stdout.write(self.style.HTTP_INFO('=== Task-Pool Status ===\n'))
         
         status_list = task_pregeneration_service.get_all_combinations_status()
-        total_unsolved = 0
+        total_tasks = 0
         total_target = 0
         
         for s in status_list:
-            total_unsolved += s['unsolved_count']
+            total_tasks += s['total_count']
             total_target += s['target']
             
             if s['needs_refill']:
@@ -102,17 +109,17 @@ class Command(BaseCommand):
             
             self.stdout.write(style(
                 f"  {indicator} {s['task_type']} Level {s['level']}: "
-                f"{s['unsolved_count']}/{s['target']} ungelöst"
+                f"{s['total_count']}/{s['target']} Tasks"
             ))
         
         self.stdout.write('')
         self.stdout.write(self.style.HTTP_INFO(
-            f'Total: {total_unsolved}/{total_target} ungelöste Tasks'
+            f'Total: {total_tasks}/{total_target} Tasks'
         ))
     
     def _refill_single(self, task_type: str, level: int):
         """Füllt eine einzelne Kombination auf"""
-        before = task_pregeneration_service.count_unsolved_tasks(task_type, level)
+        before = task_pregeneration_service.count_total_tasks(task_type, level)
         to_generate = task_pregeneration_service.get_refill_count(task_type, level)
         
         self.stdout.write(
@@ -121,10 +128,10 @@ class Command(BaseCommand):
         )
         
         generated = task_pregeneration_service.refill_tasks(task_type, level)
-        after = task_pregeneration_service.count_unsolved_tasks(task_type, level)
+        after = task_pregeneration_service.count_total_tasks(task_type, level)
         
         self.stdout.write(self.style.SUCCESS(
-            f'  → Fertig: {generated} generiert, jetzt {after} ungelöst'
+            f'  → Fertig: {generated} generiert, jetzt {after} Tasks'
         ))
     
     def _refill_type(self, task_type: str, sequential: bool = False, workers: int = None):
@@ -148,32 +155,27 @@ class Command(BaseCommand):
             self._run_parallel(combinations, workers)
     
     def _refill_all_sequential(self):
-        """Füllt alle Kombinationen sequenziell auf (alte Methode)"""
+        """Füllt alle Kombinationen sequenziell auf"""
         self.stdout.write('Fülle alle Kombinationen sequenziell auf...\n')
+        
+        # Sammle alle Kombinationen
+        combinations = []
+        for task_type in get_all_task_types():
+            for level in get_levels_for_task_type(task_type):
+                combinations.append((task_type.name, level))
         
         total_generated = 0
         
-        for task_type in get_all_task_types():
-            self.stdout.write(self.style.HTTP_INFO(f'\n--- {task_type.name} ---'))
-            
-            for level in get_levels_for_task_type(task_type):
-                before = task_pregeneration_service.count_unsolved_tasks(task_type.name, level)
-                to_generate = task_pregeneration_service.get_refill_count(task_type.name, level)
+        with tqdm(combinations, desc="Generiere Tasks", unit="Level") as pbar:
+            for task_type, level in pbar:
+                pbar.set_postfix_str(f"{task_type} L{level}")
                 
-                if to_generate == 0:
-                    self.stdout.write(f'  Level {level}: {before} vorhanden ✓')
-                    continue
+                before = task_pregeneration_service.count_total_tasks(task_type, level)
+                to_generate = task_pregeneration_service.get_refill_count(task_type, level)
                 
-                self.stdout.write(
-                    f'  Level {level}: {before} vorhanden, generiere {to_generate}...',
-                    ending=''
-                )
-                self.stdout.flush()
-                
-                generated = task_pregeneration_service.refill_tasks(task_type.name, level)
-                total_generated += generated
-                
-                self.stdout.write(self.style.SUCCESS(f' {generated} ✓'))
+                if to_generate > 0:
+                    generated = task_pregeneration_service.refill_tasks(task_type, level)
+                    total_generated += generated
         
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS(
@@ -195,56 +197,110 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE(
             f'Starte parallele Generierung mit {workers} Worker-Prozessen...\n'
         ))
-        self.stdout.write(f'Kombinationen zu verarbeiten: {len(combinations)}\n')
         
         self._run_parallel(combinations, workers)
     
     def _run_parallel(self, combinations: list, workers: int = None):
-        """Führt Refill parallel für gegebene Kombinationen aus"""
+        """Führt Refill parallel für gegebene Kombinationen aus mit Live-Fortschrittsbalken"""
         if workers is None:
             workers = min(multiprocessing.cpu_count(), len(combinations))
         
+        # Queue für Fortschrittsupdates von allen Workern
+        progress_queue = Queue()
+        
+        # Erstelle Fortschrittsbalken für jede Kombination
+        bars = {}
+        before_counts = {}  # Speichere initiale Task-Anzahl pro Kombination
+        
+        for i, (task_type, level) in enumerate(combinations):
+            key = (task_type, level)
+            # Kürze task_type für bessere Darstellung
+            short_name = task_type[:12]
+            bars[key] = tqdm(
+                total=TARGET_TASKS_PER_COMBINATION,
+                desc=f"{short_name} L{level}",
+                position=i,
+                leave=True,
+                bar_format='{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]'
+            )
+            before_counts[key] = 0
+        
+        # Starte Worker-Prozesse (max workers gleichzeitig)
+        active_processes = []
+        pending = list(combinations)
+        completed = set()
         total_generated = 0
-        completed = 0
+        errors = []
         
-        # ProcessPoolExecutor für CPU-intensive SymPy-Berechnungen
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            # Starte alle Jobs
-            futures = {
-                executor.submit(refill_worker, task_type, level): (task_type, level)
-                for task_type, level in combinations
-            }
+        while pending or active_processes:
+            # Starte neue Prozesse wenn Kapazität frei ist
+            while pending and len(active_processes) < workers:
+                task_type, level = pending.pop(0)
+                p = Process(target=worker_wrapper, args=(task_type, level, progress_queue))
+                p.start()
+                active_processes.append((p, task_type, level))
             
-            # Verarbeite Ergebnisse sobald sie fertig sind
-            for future in as_completed(futures):
-                task_type, level = futures[future]
-                completed += 1
-                
+            # Verarbeite Queue-Nachrichten (non-blocking)
+            while True:
                 try:
-                    result = future.result()
+                    msg = progress_queue.get_nowait()
+                    key = (msg['task_type'], msg['level'])
+                    bar = bars.get(key)
                     
-                    if result['skipped']:
-                        self.stdout.write(
-                            f'[{completed}/{len(combinations)}] '
-                            f'{result["task_type"]} Level {result["level"]}: '
-                            f'{result["before"]} vorhanden ✓'
-                        )
-                    else:
-                        total_generated += result['generated']
-                        self.stdout.write(self.style.SUCCESS(
-                            f'[{completed}/{len(combinations)}] '
-                            f'{result["task_type"]} Level {result["level"]}: '
-                            f'{result["generated"]} generiert '
-                            f'({result["before"]} → {result["after"]})'
-                        ))
-                        
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(
-                        f'[{completed}/{len(combinations)}] '
-                        f'{task_type} Level {level}: Fehler - {e}'
-                    ))
+                    if msg['type'] == 'start':
+                        # Setze initialen Wert basierend auf vorhandenen Tasks
+                        before_counts[key] = msg['before']
+                        if bar:
+                            bar.n = msg['before']
+                            bar.refresh()
+                    
+                    elif msg['type'] == 'progress':
+                        # Aktualisiere Fortschritt: before + generated
+                        if bar:
+                            bar.n = before_counts[key] + msg['generated']
+                            bar.refresh()
+                    
+                    elif msg['type'] == 'done':
+                        completed.add(key)
+                        if bar:
+                            if msg.get('skipped'):
+                                bar.n = bar.total
+                            else:
+                                bar.n = msg.get('after', bar.total)
+                                total_generated += msg.get('generated', 0)
+                            bar.refresh()
+                    
+                    elif msg['type'] == 'error':
+                        errors.append(f"{msg['task_type']} Level {msg['level']}: {msg.get('error', 'Unknown')}")
+                        completed.add(key)
+                
+                except Empty:
+                    break  # Queue ist leer
+            
+            # Prüfe welche Prozesse fertig sind
+            still_active = []
+            for p, task_type, level in active_processes:
+                if p.is_alive():
+                    still_active.append((p, task_type, level))
+                else:
+                    p.join()
+            active_processes = still_active
+            
+            # Kurze Pause um CPU zu schonen
+            if active_processes:
+                time.sleep(0.1)
         
+        # Schließe alle Balken
+        for bar in bars.values():
+            bar.close()
+        
+        # Zusammenfassung
         self.stdout.write('')
+        if errors:
+            self.stdout.write(self.style.ERROR(f'\nFehler bei {len(errors)} Kombinationen:'))
+            for error in errors:
+                self.stdout.write(self.style.ERROR(f'  - {error}'))
+        
         self.stdout.write(self.style.SUCCESS(
             f'\n=== Fertig: {total_generated} Tasks generiert ==='
         ))

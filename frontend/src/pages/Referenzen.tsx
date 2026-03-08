@@ -47,23 +47,11 @@ export default function Referenzen() {
 
         <section className="space-y-8">
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow">
-            <h2 className="text-2xl font-semibold mb-4 text-red-600">Literatur</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-red-600">Vorlesungsmaterialien</h2>
             <ul className="space-y-3 text-gray-700">
               <li className="pl-4 border-l-4 border-red-600">
-                Russell, S., & Norvig, P. (2020). <em>Artificial Intelligence: A Modern Approach</em> (4th ed.). Pearson.
-              </li>
-              <li className="pl-4 border-l-4 border-red-600">
-                Schöning, U. (2013). <em>Logik für Informatiker</em> (5. Aufl.). Spektrum Akademischer Verlag.
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow">
-            <h2 className="text-2xl font-semibold mb-4 text-red-600">Online-Ressourcen</h2>
-            <ul className="space-y-3 text-gray-700">
-              <li className="pl-4 border-l-4 border-red-600">
-                <a href="https://plato.stanford.edu/entries/logic-propositional/" target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">
-                  Stanford Encyclopedia of Philosophy - Propositional Logic
+                <a href="https://ilias.h-ka.de/goto.php?target=crs_1052080&client_id=HSKA" target="_blank" rel="noopener noreferrer" className="text-red-600 hover:underline">
+                  ILIAS-Kurs: Mathe 1
                 </a>
               </li>
             </ul>

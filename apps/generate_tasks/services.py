@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 # Konfiguration: Anzahl vorgenerierter Tasks pro task_type/level
 TARGET_TASKS_PER_COMBINATION = 200
 
+# Anzahl nachzugenerierender Tasks wenn ein User alle verfügbaren gelöst hat
+REFILL_BATCH_SIZE = 20
+
 # Maximale Anzahl an Versuchen pro Task bevor übersprungen wird
 # Bei Fehlschlag wird die Task übersprungen, aber beim nächsten Attempt
 # erneut versucht (Signal-basierte Selbstheilung)
@@ -37,37 +40,41 @@ class TaskPreGenerationService:
         self.generator = TaskGenerator(DIFFICULTY_CONFIG)
         self._lock = threading.Lock()
     
-    def get_unsolved_tasks_queryset(self, task_type: str, level: int):
+    def get_unsolved_tasks_for_user_queryset(self, task_type: str, level: int, user_id: int):
         """
-        Gibt QuerySet aller ungelösten Tasks für task_type/level zurück.
+        Gibt QuerySet aller Tasks zurück, die der spezifische User noch nicht gelöst hat.
         
-        Eine Task gilt als "gelöst" sobald IRGENDEIN User einen Attempt dafür hat.
-        Das bedeutet: globale Konsumierung der Tasks.
+        Eine Task gilt als "gelöst" für einen User, sobald dieser User einen Attempt dafür hat.
+        Andere User können dieselbe Task weiterhin lösen.
         """
-        solved_task_ids = Attempt.objects.values_list('task_id', flat=True)
+        solved_by_user = Attempt.objects.filter(user_id=user_id).values('task_id')
         return Task.objects.filter(
             task_type=task_type,
             level=level
-        ).exclude(id__in=Subquery(solved_task_ids.values('task_id')))
+        ).exclude(id__in=Subquery(solved_by_user))
     
-    def count_unsolved_tasks(self, task_type: str, level: int) -> int:
-        """Zählt ungelöste Tasks für eine Kombination"""
-        return self.get_unsolved_tasks_queryset(task_type, level).count()
+    def count_unsolved_tasks_for_user(self, task_type: str, level: int, user_id: int) -> int:
+        """Zählt Tasks die der User noch nicht gelöst hat"""
+        return self.get_unsolved_tasks_for_user_queryset(task_type, level, user_id).count()
     
-    def get_random_unsolved_task(self, task_type: str, level: int) -> Optional[Task]:
+    def get_random_unsolved_task_for_user(self, task_type: str, level: int, user_id: int) -> Optional[Task]:
         """
-        Holt eine zufällige ungelöste Task für task_type/level.
+        Holt eine zufällige Task die der User noch nicht gelöst hat.
         Gibt None zurück wenn keine verfügbar ist.
         """
-        return self.get_unsolved_tasks_queryset(task_type, level).order_by('?').first()
+        return self.get_unsolved_tasks_for_user_queryset(task_type, level, user_id).order_by('?').first()
+    
+    def count_total_tasks(self, task_type: str, level: int) -> int:
+        """Zählt alle Tasks für eine Kombination (unabhängig von Attempts)"""
+        return Task.objects.filter(task_type=task_type, level=level).count()
     
     def needs_refill(self, task_type: str, level: int) -> bool:
-        """Prüft ob Tasks nachgefüllt werden müssen"""
-        return self.count_unsolved_tasks(task_type, level) < TARGET_TASKS_PER_COMBINATION
+        """Prüft ob der Pool unter TARGET_TASKS_PER_COMBINATION liegt"""
+        return self.count_total_tasks(task_type, level) < TARGET_TASKS_PER_COMBINATION
     
     def get_refill_count(self, task_type: str, level: int) -> int:
-        """Berechnet wie viele Tasks generiert werden müssen"""
-        current = self.count_unsolved_tasks(task_type, level)
+        """Berechnet wie viele Tasks generiert werden müssen um TARGET zu erreichen"""
+        current = self.count_total_tasks(task_type, level)
         return max(0, TARGET_TASKS_PER_COMBINATION - current)
     
     def generate_single_task(self, task_type: TaskType, level: int) -> Task:
@@ -144,9 +151,9 @@ class TaskPreGenerationService:
         for task_type in get_all_task_types():
             for level in get_levels_for_task_type(task_type):
                 key = f"{task_type.name}_L{level}"
-                before = self.count_unsolved_tasks(task_type.name, level)
+                before = self.count_total_tasks(task_type.name, level)
                 generated = self.refill_tasks(task_type.name, level)
-                after = self.count_unsolved_tasks(task_type.name, level)
+                after = self.count_total_tasks(task_type.name, level)
                 
                 stats[key] = {
                     'before': before,
@@ -162,21 +169,25 @@ class TaskPreGenerationService:
         
         for task_type in get_all_task_types():
             for level in get_levels_for_task_type(task_type):
-                count = self.count_unsolved_tasks(task_type.name, level)
+                total_count = self.count_total_tasks(task_type.name, level)
                 status.append({
                     'task_type': task_type.name,
                     'level': level,
-                    'unsolved_count': count,
+                    'total_count': total_count,
                     'target': TARGET_TASKS_PER_COMBINATION,
-                    'needs_refill': count < TARGET_TASKS_PER_COMBINATION
+                    'needs_refill': total_count < TARGET_TASKS_PER_COMBINATION
                 })
         
         return status
     
-    def trigger_async_refill(self, task_type: str, level: int):
+    def trigger_async_refill(self, task_type: str, level: int, count: Optional[int] = None):
         """
         Startet Nachgenerierung in einem separaten Thread.
-        Für nicht-blockierende Nachgenerierung nach Attempt-Erstellung.
+        
+        Args:
+            task_type: String-Name des TaskType
+            level: Level-Nummer
+            count: Anzahl zu generierender Tasks (default: REFILL_BATCH_SIZE)
         """
         # Bei Tests deaktivieren (Test-DB unterstützt keine parallelen Zugriffe)
         import sys
@@ -184,13 +195,16 @@ class TaskPreGenerationService:
             logger.debug(f"Async-Refill übersprungen (Test-Modus)")
             return
         
+        if count is None:
+            count = REFILL_BATCH_SIZE
+        
         def refill_worker():
             with self._lock:
-                self.refill_tasks(task_type, level)
+                self.refill_tasks(task_type, level, count=count)
         
         thread = threading.Thread(target=refill_worker, daemon=True)
         thread.start()
-        logger.debug(f"Async-Refill gestartet für {task_type} Level {level}")
+        logger.info(f"Async-Refill gestartet: {count} Tasks für {task_type} Level {level}")
 
 
 # Singleton-Instanz für globalen Zugriff
