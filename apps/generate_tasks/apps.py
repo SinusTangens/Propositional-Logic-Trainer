@@ -1,0 +1,10 @@
+from django.apps import AppConfig
+
+
+class GenerateTasksConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.generate_tasks'
+    
+    def ready(self):
+        # Signals für Task-Nachgenerierung registrieren
+        import apps.generate_tasks.signals  # noqa: F401

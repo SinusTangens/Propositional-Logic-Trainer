@@ -1,4 +1,32 @@
+﻿# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Development PIDs
+.pids/
+
+# Frontend (redundant mit frontend/.gitignore, aber sicher ist sicher)
+frontend/node_modules/
+frontend/dist/
+
+# Environment & IDE
 .env
 .vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
