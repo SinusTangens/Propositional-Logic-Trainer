@@ -8,26 +8,24 @@ from core.task_generator.Task import (
     TASK_TYPE_DISPLAY_NAMES,
     get_max_level,
     get_all_task_types,
-    get_total_levels,
 )
 
 
 # ============================================================================
 # LEVEL-KONFIGURATION
 # Anzahl der benötigten richtigen Antworten in Folge pro Aufgabentyp und Level
-# Die Anzahl der Levels wird automatisch aus DIFFICULTY_CONFIG in Task.py abgeleitet!
 # Format: { 'TASK_TYPE': { level: required_correct, ... } }
 # ============================================================================
 LEVEL_CONFIG = {
     'DIRECT_INFERENCE': {
         1: 5,  # Level 1 → 5 richtige zum Aufstieg zu Level 2
-        2: 5,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
-        3: 5,  # Level 3 → 5 richtige zum Aufstieg zu Level 4
-        4: 5,  # Level 4 → 5 richtige zum Abschluss
+        2: 4,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
+        3: 3,  # Level 3 → 5 richtige zum Aufstieg zu Level 4
+        4: 2,  # Level 4 → 5 richtige zum Abschluss
     },
     'CASE_SPLIT': {
-        1: 1,  # Level 1 → 5 richtige zum Aufstieg zu Level 2
-        2: 1,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
+        1: 3,  # Level 1 → 5 richtige zum Aufstieg zu Level 2
+        2: 2,  # Level 2 → 5 richtige zum Aufstieg zu Level 3
         3: 1,  # Level 3 → 5 richtige zum Abschluss
     },
 }
