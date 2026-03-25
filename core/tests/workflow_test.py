@@ -21,7 +21,15 @@ from core.logic_engine.feedback.UserInput import UserInput
 
 def main():
     """
-    Manuelles Testen des Workflows von der Aufgabengenerierung über das algorithmische Lösen bis hin zur Feedbackgenerierung 
+    Manuelles Testen des Workflows von der Aufgabengenerierung über das algorithmische Lösen bis hin zur Feedbackgenerierung. 
+        - Generierung einer Aufgabe (Zufälliger Aufgabentyp und Level)
+        - Vorab lösen der Aufgabe mit dem Solver (Backend)
+        - Simulation von Nutzerantworten und Generierung von Feedback durch die FeedbackEngine
+        
+        Ziel: Sicherstellen, dass alle Komponenten nahtlos zusammenarbeiten und realistische Interaktionen ermöglichen.
+        Hinweis: Dieser Test ist eher als "Integrationstest" zu verstehen, da er den gesamten Workflow abdeckt. Er ist nicht automatisiert, sondern dient zur manuellen Überprüfung der Funktionalität. 
+
+        Die Ausgabe 'None' des Solvers steht intern dafür, dass kein konkreter Schluss möglich ist, d.h. die Variable weder wahr noch falsch geschlossen werden kann
     """
 
     print("=== START INTEGRATION TEST: Workflow ===\n")
@@ -33,12 +41,8 @@ def main():
         task_type = random.choice(task_types)
         levels = get_levels_for_task_type(task_type)
         level = random.choice(levels)
-        # if task_type is TaskType.CASE_SPLIT:
-        #     level = random.randint(1,3)
-        # elif task_type is TaskType.DIRECT_INFERENCE:
-        #     level = random.randint(1,4)
-        # else:
-        #     raise ValueError("Unbekannter Aufgabentyp.")
+
+        task_type = TaskType.CASE_SPLIT
 
         generator = TaskGenerator(DIFFICULTY_CONFIG) 
         task = generator.generate_task(task_type, level)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern

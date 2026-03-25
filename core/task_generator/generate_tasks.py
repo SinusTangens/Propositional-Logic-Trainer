@@ -353,7 +353,8 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
 
 
 
-    # Aus didaktischen Gründen soll bei diesem Aufgabentyp auf maximal eine Variable nicht automatisch geschlossen werden können
+    # Aus didaktischen Gründen soll auf maximal eine Variable nicht direkt geschlossen werden können
+    # Das schränkt die Anzahl der Modelle auf maximal 2 ein und sorgt dafür, dass für maximal eine Variable keine eindeutige Belegung geschlossen werden kann
     closure = deductive_literal_closure(premises, used_vars_seq)
     if len(closure) < (len(used_vars) -1):
         return False
@@ -405,10 +406,10 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
     used_vars_seq = used_vars[:]
 
     
-    # Die Aufgabe muss genau eine eindeutige Lösung besitzen
+    # Aus didaktischen Gründen soll die Belegung maximal 2 Modelle zulassen, d.h. auf maximal eine Variable soll keine eindeutige Belegung geschlossen werden können 
     models = all_models(premises, used_vars)
-    if len(models) != 1: 
-        return False 
+    if len(models) == 0 or len(models) > 2:
+        return False
 
     # Keine Variablenbelegung soll ohne eine initale Fallunterscheidung bestimmbar sein
     initial_closure = deductive_literal_closure(premises, used_vars_seq)
@@ -430,10 +431,10 @@ def is_good_task_type_case_split(premises: List[Boolean], vars) -> bool:
         models_false = all_models(premises + [Not(v)], used_vars)
         
 
-        if (len(models_true) == 0 and len(models_false) == 1) or \
-           (len(models_true) == 1 and len(models_false) == 0):
+    
+        if (len(models_true) == 0 and (len(models_false) > 0 and len(models_false) <= 2)) or \
+           ((len(models_true) > 0 and len(models_true) <= 2) and len(models_false) == 0):
             split_useful_count += 1
-            
             
     if split_useful_count < 2:
         return False 
