@@ -36,7 +36,7 @@ export default function Account() {
 
   // Finde Unit Propagation und Case Split Progress
   const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
-    type: 'Unit Propagation',
+    type: 'Direktes Schließen',
     currentLevel: 1,
     totalLevels: 4,
     correctInRow: 0,
@@ -46,7 +46,7 @@ export default function Account() {
   };
 
   const caseSplitProgress = progress.find(p => p.task_type === 'CASE_SPLIT') || {
-    type: 'Case Split',
+    type: 'Fallunterscheidung',
     currentLevel: 1,
     totalLevels: 3,
     correctInRow: 0,
@@ -55,31 +55,20 @@ export default function Account() {
     isCompleted: false,
   };
 
+  const calculateTypeProgress = (progressObj) => {
+    if (!progressObj || !progressObj.totalLevels) return 0;
+    const finishedLevels = Math.max(0, progressObj.currentLevel - 1);
+    const currentLevelProgress = progressObj.requiredCorrect > 0 ? (progressObj.correctInRow / progressObj.requiredCorrect) : 0;
+    return ((finishedLevels + currentLevelProgress) / progressObj.totalLevels) * 100;
+  };
+
   const calculateOverallProgress = () => {
-    // Gesamtzahl der Levels dynamisch aus den Progress-Daten berechnen
-    const totalLevels = unitPropProgress.totalLevels + caseSplitProgress.totalLevels;
-    let completedLevels = 0;
-
-    // Count completed Unit Propagation levels
-    if (unitPropProgress.currentLevel > 1) {
-      completedLevels += unitPropProgress.currentLevel - 1;
-    }
-    
-    // Add current level progress
-    const currentLevelProgress = unitPropProgress.correctInRow / unitPropProgress.requiredCorrect;
-    completedLevels += currentLevelProgress;
-    
-    // If Case Split is unlocked
-    if (caseSplitProgress.isUnlocked) {
-      completedLevels = unitPropProgress.totalLevels; // All Unit Propagation levels completed
-      if (caseSplitProgress.currentLevel > 1) {
-        completedLevels += caseSplitProgress.currentLevel - 1;
-      }
-      const caseSplitLevelProgress = caseSplitProgress.correctInRow / caseSplitProgress.requiredCorrect;
-      completedLevels += caseSplitLevelProgress;
-    }
-
-    return (completedLevels / totalLevels) * 100;
+    // Alle relevanten Aufgabentypen berücksichtigen
+    const progresses = [unitPropProgress, caseSplitProgress];
+    const typeProgresses = progresses.map(calculateTypeProgress);
+    // Mittelwert berechnen
+    const avgProgress = typeProgresses.reduce((a, b) => a + b, 0) / typeProgresses.length;
+    return avgProgress;
   };
 
   const handlePasswordChange = async () => {
@@ -238,10 +227,10 @@ export default function Account() {
             </div>
           </div>
 
-          {/* Unit Propagation Progress */}
+          {/* Direktes Schließen Progress */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <h3 className="text-2xl">Unit Propagation</h3>
+              <h3 className="text-2xl">Direktes Schließen</h3>
               {unitPropProgress.isCompleted ? (
                 <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
                   Abgeschlossen
@@ -312,10 +301,10 @@ export default function Account() {
             </div>
           </div>
 
-          {/* Case Split Progress */}
+          {/* Fallunterscheidung Progress */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <h3 className="text-2xl">Case Split</h3>
+              <h3 className="text-2xl">Fallunterscheidung</h3>
               {!caseSplitProgress.isUnlocked && (
                 <div className="flex items-center gap-2 px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-semibold">
                   <Lock className="w-4 h-4" />
@@ -398,7 +387,7 @@ export default function Account() {
                 <div className="flex items-center justify-center gap-3 py-4">
                   <Lock className="w-8 h-8 text-gray-500" />
                   <p className="text-lg text-gray-600">
-                    Schließe alle Unit Propagation Level ab, um diesen Bereich freizuschalten
+                    Schließe alle Direktes Schließen Level ab, um diesen Bereich freizuschalten
                   </p>
                 </div>
               )}

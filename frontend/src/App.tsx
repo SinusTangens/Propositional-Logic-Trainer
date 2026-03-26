@@ -46,6 +46,7 @@ function HomePage() {
   const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE');
   const caseSplitProgress = progress.find(p => p.task_type === 'CASE_SPLIT');
   const isLernpfadCompleted = unitPropProgress?.isCompleted && caseSplitProgress?.isCompleted;
+  const isSuperuser = !!user?.is_superuser;
 
   const cards = [
     {
@@ -61,7 +62,7 @@ function HomePage() {
       icon: BookOpen,
       link: '/freies-ueben',
       color: 'from-red-600 to-red-700',
-      locked: !isLernpfadCompleted,
+      locked: !isLernpfadCompleted && !isSuperuser,
       lockedMessage: 'Schließe zuerst den Lernpfad ab'
     },
     {

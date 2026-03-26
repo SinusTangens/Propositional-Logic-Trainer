@@ -104,13 +104,14 @@ export default function FreiesUeben() {
   const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE');
   const caseSplitProgress = progress.find(p => p.task_type === 'CASE_SPLIT');
   const isLernpfadCompleted = unitPropProgress?.isCompleted && caseSplitProgress?.isCompleted;
+  const isSuperuser = !!user?.is_superuser;
 
   const handleAccountClick = () => {
     navigate('/account');
   };
 
-  // Gesperrte Ansicht wenn Lernpfad nicht abgeschlossen
-  if (!isLernpfadCompleted) {
+  // Gesperrte Ansicht nur für Nicht-Superuser, wenn Lernpfad nicht abgeschlossen
+  if (!isLernpfadCompleted && !isSuperuser) {
     return (
       <div className="min-h-screen bg-white">
         <header className="container mx-auto px-4 py-6 flex justify-between items-center">
@@ -165,7 +166,7 @@ export default function FreiesUeben() {
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">Unit Propagation</span>
+                  <span className="text-gray-700">Direktes Schließen</span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     unitPropProgress?.isCompleted 
                       ? 'bg-green-100 text-green-700' 
@@ -179,7 +180,7 @@ export default function FreiesUeben() {
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700">Case Split</span>
+                  <span className="text-gray-700">Fallunterscheidung</span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     caseSplitProgress?.isCompleted 
                       ? 'bg-green-100 text-green-700' 
@@ -249,7 +250,7 @@ export default function FreiesUeben() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl">
           <ExerciseCard
-            title="Unit Propagation"
+            title="Direktes Schließen"
             formula="A → B"
             description="Ziehe direkte Schlussfolgerungen aus einzelnen Fakten und vereinfache die Formel."
             levels={[1, 2, 3, 4]}
@@ -257,7 +258,7 @@ export default function FreiesUeben() {
           />
           
           <ExerciseCard
-            title="Case Split"
+            title="Fallunterscheidung"
             isCaseSplit
             description="Löse komplexe Probleme, indem du verschiedene Fälle systematisch untersuchst."
             levels={[1, 2, 3]}

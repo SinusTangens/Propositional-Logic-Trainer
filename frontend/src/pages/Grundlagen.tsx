@@ -240,9 +240,9 @@ export default function Grundlagen() {
           </div>
         </section>
 
-        {/* Unit Propagation Section */}
+        {/* Direktes Schließen Section */}
         <section className="mb-16">
-          <h2 className="text-3xl mb-6 text-red-600">Aufgabentyp: Unit Propagation</h2>
+          <h2 className="text-3xl mb-6 text-red-600">Aufgabentyp: Direktes Schließen</h2>
           
           <div className="bg-gray-50 border border-gray-300 rounded-lg p-8 mb-8">
             <h3 className="text-2xl mb-4 font-semibold">Erklärung</h3>
@@ -258,7 +258,7 @@ export default function Grundlagen() {
             <h3 className="text-2xl mb-6 font-semibold">Beispiel</h3>
             
             <div className="mb-8 flex justify-center">
-              <img src={unitPropExample} alt="Unit Propagation Beispiel" className="max-w-md" />
+              <img src={unitPropExample} alt="Direktes Schließen Beispiel" className="max-w-md" />
             </div>
 
             <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6">
@@ -293,9 +293,9 @@ export default function Grundlagen() {
           </div>
         </section>
 
-        {/* Case Split Section */}
+        {/* Fallunterscheidung Section */}
         <section className="mb-16">
-          <h2 className="text-3xl mb-6 text-red-600">Aufgabentyp: Case Split</h2>
+          <h2 className="text-3xl mb-6 text-red-600">Aufgabentyp: Fallunterscheidung</h2>
           
           <div className="bg-gray-50 border border-gray-300 rounded-lg p-8 mb-8">
             <h3 className="text-2xl mb-4 font-semibold">Erklärung</h3>
@@ -313,7 +313,7 @@ export default function Grundlagen() {
             <h3 className="text-2xl mb-6 font-semibold">Beispiel</h3>
             
             <div className="mb-8 flex justify-center">
-              <img src={caseSplitExample} alt="Case Split Beispiel" className="max-w-2xl" />
+              <img src={caseSplitExample} alt="Fallunterscheidung Beispiel" className="max-w-2xl" />
             </div>
 
             <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6">

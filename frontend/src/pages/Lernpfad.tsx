@@ -332,14 +332,11 @@ export default function Lernpfad() {
             </div>
           )}
 
-          {/* Unit Propagation Pfad */}
+          {/* Direktes Schließen Pfad */}
           <section className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
               <div className="w-4 h-4 rounded-full bg-blue-600" />
-              Unit Propagation
-              <span className="text-sm font-normal text-gray-500">
-                (Direktes Schließen)
-              </span>
+              Direktes Schließen
             </h2>
             
             <div className="bg-white border border-gray-200 rounded-lg p-8 overflow-x-auto">
@@ -390,14 +387,11 @@ export default function Lernpfad() {
             </div>
           </section>
 
-          {/* Case Split Pfad */}
+          {/* Fallunterscheidung Pfad */}
           <section>
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
               <div className="w-4 h-4 rounded-full bg-purple-600" />
-              Case Split
-              <span className="text-sm font-normal text-gray-500">
-                (Mit Fallunterscheidung)
-              </span>
+              Fallunterscheidung
               {!caseSplitProgress.isUnlocked && (
                 <span className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-sm">
                   <Lock className="w-4 h-4" />
@@ -456,7 +450,7 @@ export default function Lernpfad() {
               
               {!caseSplitProgress.isUnlocked && (
                 <div className="mt-6 pt-4 border-t border-gray-200 text-center text-gray-500">
-                  Schließe alle Unit Propagation Level ab, um Case Split freizuschalten.
+                  Schließe alle Level zu direktem Schließen ab, um den Aufgabentyp Fallunterscheidung freizuschalten.
                 </div>
               )}
             </div>
@@ -535,7 +529,7 @@ export default function Lernpfad() {
             Zurück zum Pfad
           </Button>
           <h1 className="text-4xl font-bold">
-            {currentTaskType === 'DIRECT_INFERENCE' ? 'Unit Propagation' : 'Case Split'}
+            {currentTaskType === 'DIRECT_INFERENCE' ? 'Direktes Schließen' : 'Fallunterscheidung'}
           </h1>
         </div>
 

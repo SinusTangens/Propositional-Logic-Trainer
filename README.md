@@ -11,7 +11,7 @@ Die Anwendung bietet:
 - **Sofortige Auswertung** - Direktes Feedback zu Lösungsversuchen
 - **Levelsystem** - Breit gefächerte Schwierigkeitsgrade für schrittweises Lernen
 - **Lernfortschritttracking** - Sichtbarer Fortschritt zur Motivation
-- **Verschiedene Lösungsverfahren** - Unit Propagation, Case Split
+- **Verschiedene Lösungsverfahren** - Direktes Schließen, Fallunerscheidung
 
 ---
 
@@ -263,7 +263,7 @@ python manage.py collectstatic --noinput
 
 ### Admin & Debugging
 ```powershell
-# Superuser erstellen (um das Admin Panel zu nutzen)
+# Erstellt einen Superuser, der Zugriff auf das Admin-Panel hat (zusätzlich erhält ein Superuser automatisch Zugriff auf das Freie Üben und den Aufgabentyp Fallunterscheidung im Lernpfad)
 python manage.py createsuperuser
 
 # Django Shell öffnen

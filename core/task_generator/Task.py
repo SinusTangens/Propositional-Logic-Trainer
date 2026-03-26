@@ -12,8 +12,8 @@ class TaskType(Enum):
 
 # Anzeigenamen für die TaskTypes (für UI)
 TASK_TYPE_DISPLAY_NAMES = {
-    TaskType.DIRECT_INFERENCE: "Unit Propagation",
-    TaskType.CASE_SPLIT: "Case Split",
+    TaskType.DIRECT_INFERENCE: "Direktes Schließen",
+    TaskType.CASE_SPLIT: "Fallunterscheidung",
 }
 
 

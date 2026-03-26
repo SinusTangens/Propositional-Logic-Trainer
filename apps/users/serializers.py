@@ -46,8 +46,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'created_at', 'progress', 'stats', 'avatar']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'created_at', 'progress', 'stats', 'avatar', 'is_superuser']
+        read_only_fields = ['id', 'created_at', 'is_superuser']
     
     def get_progress(self, obj):
         """Holt den formatierten Fortschritt für das Frontend."""

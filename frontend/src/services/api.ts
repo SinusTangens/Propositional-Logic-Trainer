@@ -159,6 +159,7 @@ export interface User {
   progress: LevelProgress[];
   stats: UserStats;
   avatar: AvatarSettings;
+  is_superuser: boolean;
 }
 
 export interface AuthResponse {

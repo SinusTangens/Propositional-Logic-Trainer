@@ -143,7 +143,8 @@ class User(AbstractUser):
             'totalLevels': case_max_level,
             'correctInRow': case_split.correct_in_row if case_split else 0,
             'requiredCorrect': get_required_correct('CASE_SPLIT', case_level),
-            'isUnlocked': unit_prop_completed,
+            # Superuser können immer freischalten
+            'isUnlocked': (self.is_superuser or unit_prop_completed),
             'isCompleted': case_split.is_completed if case_split else False
         })
         
