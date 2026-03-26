@@ -8,7 +8,7 @@ import { LogicSymbolsLogo } from './components/LogicSymbolsLogo';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Lernpfad from './pages/Lernpfad';
 import FreiesUeben from './pages/FreiesUeben';
-import UnitPropagation from './pages/UnitPropagation';
+import DirectInference from './pages/DirectInference';
 import CaseSplit from './pages/CaseSplit';
 import Grundlagen from './pages/Grundlagen';
 import Referenzen from './pages/Referenzen';
@@ -43,11 +43,12 @@ function HomePage() {
 
   // Progress prüfen für Freies Üben Sperrung
   const progress = user?.progress || [];
-  const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE');
+  const directInfProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE');
   const caseSplitProgress = progress.find(p => p.task_type === 'CASE_SPLIT');
-  const isLernpfadCompleted = unitPropProgress?.isCompleted && caseSplitProgress?.isCompleted;
+  const isLernpfadCompleted = directInfProgress?.isCompleted && caseSplitProgress?.isCompleted;
   const isSuperuser = !!user?.is_superuser;
 
+  
   const cards = [
     {
       id: 1,
@@ -190,7 +191,7 @@ export default function App() {
           {/* Protected Routes - erfordern Login */}
           <Route path="/lernpfad" element={<ProtectedRoute><Lernpfad /></ProtectedRoute>} />
           <Route path="/freies-ueben" element={<ProtectedRoute><FreiesUeben /></ProtectedRoute>} />
-          <Route path="/unit-propagation" element={<ProtectedRoute><UnitPropagation /></ProtectedRoute>} />
+          <Route path="/direct-inference" element={<ProtectedRoute><DirectInference /></ProtectedRoute>} />
           <Route path="/case-split" element={<ProtectedRoute><CaseSplit /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
           

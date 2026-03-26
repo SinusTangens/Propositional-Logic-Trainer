@@ -15,7 +15,7 @@ import {
 
 const TOTAL_LEVELS = 4;
 
-export default function UnitPropagation() {
+export default function DirectInference() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, refreshUser } = useAuth();
@@ -181,7 +181,7 @@ export default function UnitPropagation() {
             <ArrowLeft className="w-4 h-4" />
             Zurück
           </Button>
-          <h1 className="text-4xl font-bold">Unit Propagation</h1>
+          <h1 className="text-4xl font-bold">Direktes Schließen</h1>
           <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
             Freies Üben
           </span>

@@ -116,26 +116,26 @@ class User(AbstractUser):
         from .models import UserProgress  # Import hier um circular import zu vermeiden
         progress_list = []
         
-        # Unit Propagation - verwendet max_level aus DIFFICULTY_CONFIG
-        unit_prop = UserProgress.objects.filter(user=self, task_type='DIRECT_INFERENCE').first()
-        unit_level = unit_prop.current_level if unit_prop else 1
-        unit_max_level = get_max_level(TaskType.DIRECT_INFERENCE)
+        # Direct Inference - verwendet max_level aus DIFFICULTY_CONFIG
+        direct_inference = UserProgress.objects.filter(user=self, task_type='DIRECT_INFERENCE').first()
+        direct_inference_level = direct_inference.current_level if direct_inference else 1
+        direct_inference_max_level = get_max_level(TaskType.DIRECT_INFERENCE)
         progress_list.append({
             'type': TASK_TYPE_DISPLAY_NAMES[TaskType.DIRECT_INFERENCE],
             'task_type': 'DIRECT_INFERENCE',
-            'currentLevel': unit_level,
-            'totalLevels': unit_max_level,
-            'correctInRow': unit_prop.correct_in_row if unit_prop else 0,
-            'requiredCorrect': get_required_correct('DIRECT_INFERENCE', unit_level),
+            'currentLevel': direct_inference_level,
+            'totalLevels': direct_inference_max_level,
+            'correctInRow': direct_inference.correct_in_row if direct_inference else 0,
+            'requiredCorrect': get_required_correct('DIRECT_INFERENCE', direct_inference_level),
             'isUnlocked': True,  # Immer freigeschaltet
-            'isCompleted': unit_prop.is_completed if unit_prop else False
+            'isCompleted': direct_inference.is_completed if direct_inference else False
         })
         
-        # Case Split - nur freigeschaltet wenn Unit Propagation abgeschlossen
+        # Case Split - nur freigeschaltet wenn Direct Inference abgeschlossen
         case_split = UserProgress.objects.filter(user=self, task_type='CASE_SPLIT').first()
         case_level = case_split.current_level if case_split else 1
         case_max_level = get_max_level(TaskType.CASE_SPLIT)
-        unit_prop_completed = unit_prop.is_completed if unit_prop else False
+        direct_inference_completed = direct_inference.is_completed if direct_inference else False
         progress_list.append({
             'type': TASK_TYPE_DISPLAY_NAMES[TaskType.CASE_SPLIT],
             'task_type': 'CASE_SPLIT',
@@ -144,7 +144,7 @@ class User(AbstractUser):
             'correctInRow': case_split.correct_in_row if case_split else 0,
             'requiredCorrect': get_required_correct('CASE_SPLIT', case_level),
             # Superuser können immer freischalten
-            'isUnlocked': (self.is_superuser or unit_prop_completed),
+            'isUnlocked': (self.is_superuser or direct_inference_completed),
             'isCompleted': case_split.is_completed if case_split else False
         })
         

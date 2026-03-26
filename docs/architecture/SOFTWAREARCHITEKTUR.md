@@ -302,8 +302,8 @@ Statische Assets (Bilder):
 | Datei | Verwendung |
 |-------|------------|
 | `hka-logo.jpg` | HKA-Logo für Footer/Header |
-| `unit-prop-example.png` | Beispielbild für Unit Propagation Erklärung |
-| `case-split-example.png` | Beispielbild für Case Split Erklärung |
+| `unit-prop-example.png` | Beispielbild für DIRECT INFERENCE Erklärung |
+| `case-split-example.png` | Beispielbild für CASE SPLIT Erklärung |
 | `index.ts` | Export-Datei für einfachen Import der Assets |
 
 ---

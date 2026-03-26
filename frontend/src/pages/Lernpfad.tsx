@@ -133,7 +133,7 @@ export default function Lernpfad() {
   
   // Progress aus User-Daten
   const progress = user?.progress || [];
-  const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
+  const directInferenceProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
     currentLevel: 1, totalLevels: 4, correctInRow: 0, requiredCorrect: 5, isUnlocked: true, isCompleted: false
   };
   const caseSplitProgress = progress.find(p => p.task_type === 'CASE_SPLIT') || {
@@ -224,11 +224,11 @@ export default function Lernpfad() {
   const handleNextTask = () => {
     if (solveResult?.progress?.type_completed) {
       // Typ abgeschlossen - prüfe ob gesamter Lernpfad fertig
-      const typeName = currentTaskType === 'DIRECT_INFERENCE' ? 'Unit Propagation' : 'Case Split';
+      const typeName = currentTaskType === 'DIRECT_INFERENCE' ? 'Direct Inference' : 'Case Split';
       setCompletedTaskTypeName(typeName);
       
       // Prüfe ob der gesamte Lernpfad jetzt abgeschlossen ist
-      // Nach Case Split Abschluss UND Unit Prop war schon fertig
+      // Nach Case Split Abschluss UND Direct Inference war schon fertig
       const updatedProgress = solveResult.user_progress || [];
       const updatedUnitProp = updatedProgress.find(p => p.task_type === 'DIRECT_INFERENCE');
       const updatedCaseSplit = updatedProgress.find(p => p.task_type === 'CASE_SPLIT');
@@ -332,7 +332,7 @@ export default function Lernpfad() {
             </div>
           )}
 
-          {/* Direktes Schließen Pfad */}
+          {/* Direct Inference Pfad */}
           <section className="mb-12">
             <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
               <div className="w-4 h-4 rounded-full bg-blue-600" />
@@ -342,9 +342,9 @@ export default function Lernpfad() {
             <div className="bg-white border border-gray-200 rounded-lg p-8 overflow-x-auto">
               <div className="flex items-center justify-start gap-0 min-w-max">
                 {[1, 2, 3, 4].map((level, idx) => {
-                  const isCompleted = level < unitPropProgress.currentLevel || (unitPropProgress.isCompleted && level === unitPropProgress.totalLevels);
-                  const isActive = level === unitPropProgress.currentLevel && !unitPropProgress.isCompleted;
-                  const isLocked = level > unitPropProgress.currentLevel && !unitPropProgress.isCompleted; // Level noch nicht erreicht
+                  const isCompleted = level < directInferenceProgress.currentLevel || (directInferenceProgress.isCompleted && level === directInferenceProgress.totalLevels);
+                  const isActive = level === directInferenceProgress.currentLevel && !directInferenceProgress.isCompleted;
+                  const isLocked = level > directInferenceProgress.currentLevel && !directInferenceProgress.isCompleted; // Level noch nicht erreicht
                   
                   return (
                     <div key={level} className="flex items-center">
@@ -357,30 +357,30 @@ export default function Lernpfad() {
                         onClick={() => !isLocked && !isCompleted && startTask('DIRECT_INFERENCE', level)}
                         description={`Level ${level}: ${level === 1 ? 'Einfache Schlüsse' : level === 2 ? 'Mittlere Komplexität' : level === 3 ? 'Fortgeschritten' : 'Experte'}`}
                       />
-                      {idx < 3 && <PathLine isCompleted={isCompleted || (isActive && idx < unitPropProgress.currentLevel - 1)} />}
+                      {idx < 3 && <PathLine isCompleted={isCompleted || (isActive && idx < directInferenceProgress.currentLevel - 1)} />}
                     </div>
                   );
                 })}
                 
                 {/* Ziel */}
-                <PathLine isCompleted={unitPropProgress.isCompleted} />
+                <PathLine isCompleted={directInferenceProgress.isCompleted} />
                 <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                  <Flag className={`w-10 h-10 ${unitPropProgress.isCompleted ? 'text-green-400' : 'text-white'}`} />
+                  <Flag className={`w-10 h-10 ${directInferenceProgress.isCompleted ? 'text-green-400' : 'text-white'}`} />
                 </div>
               </div>
               
               {/* Progress-Anzeige */}
               <div className="mt-6 pt-4 border-t border-gray-200">
-                {unitPropProgress.isCompleted ? (
+                {directInferenceProgress.isCompleted ? (
                   <div className="flex items-center gap-2 text-green-600 font-semibold">
                     <CheckCircle2 className="w-5 h-5" />
-                    <span>Alle {unitPropProgress.totalLevels} Level erfolgreich abgeschlossen!</span>
+                    <span>Alle {directInferenceProgress.totalLevels} Level erfolgreich abgeschlossen!</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span>Level {unitPropProgress.currentLevel}/{unitPropProgress.totalLevels}</span>
+                    <span>Level {directInferenceProgress.currentLevel}/{directInferenceProgress.totalLevels}</span>
                     <span>•</span>
-                    <span>{unitPropProgress.correctInRow}/{unitPropProgress.requiredCorrect} richtig in Folge</span>
+                    <span>{directInferenceProgress.correctInRow}/{directInferenceProgress.requiredCorrect} richtig in Folge</span>
                   </div>
                 )}
               </div>
@@ -416,7 +416,7 @@ export default function Lernpfad() {
                         isLocked={isLocked}
                         type="CASE_SPLIT"
                         onClick={() => !isLocked && !isCompleted && startTask('CASE_SPLIT', level)}
-                        description={isLocked ? 'Schließe zuerst Unit Propagation ab' : `Level ${level}: ${level === 1 ? 'Einfache Fälle' : level === 2 ? 'Mehrere Fälle' : 'Komplexe Szenarien'}`}
+                        description={isLocked ? 'Schließe zuerst Direktes Schließen ab' : `Level ${level}: ${level === 1 ? 'Einfache Fälle' : level === 2 ? 'Mehrere Fälle' : 'Komplexe Szenarien'}`}
                       />
                       {idx < 2 && <PathLine isCompleted={isCompleted || (isActive && idx < caseSplitProgress.currentLevel - 1)} />}
                     </div>
@@ -462,15 +462,15 @@ export default function Lernpfad() {
               onClick={() => {
                 if (caseSplitProgress.isUnlocked && !caseSplitProgress.isCompleted) {
                   startTask('CASE_SPLIT', caseSplitProgress.currentLevel);
-                } else if (!unitPropProgress.isCompleted) {
-                  startTask('DIRECT_INFERENCE', unitPropProgress.currentLevel);
+                } else if (!directInferenceProgress.isCompleted) {
+                  startTask('DIRECT_INFERENCE', directInferenceProgress.currentLevel);
                 }
               }}
-              disabled={loading || (unitPropProgress.isCompleted && caseSplitProgress.isCompleted)}
+              disabled={loading || (directInferenceProgress.isCompleted && caseSplitProgress.isCompleted)}
               className="bg-red-600 hover:bg-red-700 text-white text-xl px-12 py-6 border-none flex items-center gap-3 mx-auto"
             >
               <Play className="w-6 h-6" />
-              {loading ? 'Lade...' : unitPropProgress.isCompleted && caseSplitProgress.isCompleted ? 'Alle Level abgeschlossen!' : 'Fortfahren'}
+              {loading ? 'Lade...' : directInferenceProgress.isCompleted && caseSplitProgress.isCompleted ? 'Alle Level abgeschlossen!' : 'Fortfahren'}
             </Button>
           </div>
         </main>
@@ -552,11 +552,11 @@ export default function Lernpfad() {
             <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
               <div 
                 className={`h-full transition-all duration-300 ${currentTaskType === 'DIRECT_INFERENCE' ? 'bg-blue-600' : 'bg-purple-600'}`}
-                style={{ width: `${((currentTaskType === 'DIRECT_INFERENCE' ? unitPropProgress.correctInRow : caseSplitProgress.correctInRow) / (currentTaskType === 'DIRECT_INFERENCE' ? unitPropProgress.requiredCorrect : caseSplitProgress.requiredCorrect)) * 100}%` }}
+                style={{ width: `${((currentTaskType === 'DIRECT_INFERENCE' ? directInferenceProgress.correctInRow : caseSplitProgress.correctInRow) / (currentTaskType === 'DIRECT_INFERENCE' ? directInferenceProgress.requiredCorrect : caseSplitProgress.requiredCorrect)) * 100}%` }}
               />
             </div>
             <p className="mt-2 text-gray-700">
-              {currentTaskType === 'DIRECT_INFERENCE' ? unitPropProgress.correctInRow : caseSplitProgress.correctInRow}/{currentTaskType === 'DIRECT_INFERENCE' ? unitPropProgress.requiredCorrect : caseSplitProgress.requiredCorrect} richtige Antworten in Folge
+              {currentTaskType === 'DIRECT_INFERENCE' ? directInferenceProgress.correctInRow : caseSplitProgress.correctInRow}/{currentTaskType === 'DIRECT_INFERENCE' ? directInferenceProgress.requiredCorrect : caseSplitProgress.requiredCorrect} richtige Antworten in Folge
             </p>
           </div>
         </div>

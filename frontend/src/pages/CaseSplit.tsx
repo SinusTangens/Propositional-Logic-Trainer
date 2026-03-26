@@ -181,7 +181,7 @@ export default function CaseSplit() {
             <ArrowLeft className="w-4 h-4" />
             Zurück
           </Button>
-          <h1 className="text-4xl font-bold">Case Split</h1>
+          <h1 className="text-4xl font-bold">Fallunterscheidung</h1>
           <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
             Freies Üben
           </span>

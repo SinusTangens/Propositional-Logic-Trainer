@@ -101,9 +101,9 @@ export default function FreiesUeben() {
 
   // Progress prüfen - Freies Üben nur wenn Lernpfad abgeschlossen
   const progress = user?.progress || [];
-  const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE');
+  const directInferenceProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE');
   const caseSplitProgress = progress.find(p => p.task_type === 'CASE_SPLIT');
-  const isLernpfadCompleted = unitPropProgress?.isCompleted && caseSplitProgress?.isCompleted;
+  const isLernpfadCompleted = directInferenceProgress?.isCompleted && caseSplitProgress?.isCompleted;
   const isSuperuser = !!user?.is_superuser;
 
   const handleAccountClick = () => {
@@ -168,13 +168,13 @@ export default function FreiesUeben() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-700">Direktes Schließen</span>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    unitPropProgress?.isCompleted 
+                    directInferenceProgress?.isCompleted 
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-gray-100 text-gray-600'
                   }`}>
-                    {unitPropProgress?.isCompleted 
+                    {directInferenceProgress?.isCompleted 
                       ? '✓ Abgeschlossen' 
-                      : `Level ${unitPropProgress?.currentLevel || 1}/${unitPropProgress?.totalLevels || 4}`
+                      : `Level ${directInferenceProgress?.currentLevel || 1}/${directInferenceProgress?.totalLevels || 4}`
                     }
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export default function FreiesUeben() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-black border-none"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -254,7 +254,7 @@ export default function FreiesUeben() {
             formula="A → B"
             description="Ziehe direkte Schlussfolgerungen aus einzelnen Fakten und vereinfache die Formel."
             levels={[1, 2, 3, 4]}
-            onStart={(level) => navigate(`/unit-propagation?mode=free&level=${level}`)}
+            onStart={(level) => navigate(`/direct-inference?mode=free&level=${level}`)}
           />
           
           <ExerciseCard

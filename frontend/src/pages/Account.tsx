@@ -34,8 +34,8 @@ export default function Account() {
   const progress = user.progress || [];
   const stats = user.stats || { totalSolved: 0, correctSolved: 0, currentStreak: 0, highscoreStreak: 0 };
 
-  // Finde Unit Propagation und Case Split Progress
-  const unitPropProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
+  // Finde Direct Inference und Case Split Progress
+  const directInferenceProgress = progress.find(p => p.task_type === 'DIRECT_INFERENCE') || {
     type: 'Direktes Schließen',
     currentLevel: 1,
     totalLevels: 4,
@@ -64,7 +64,7 @@ export default function Account() {
 
   const calculateOverallProgress = () => {
     // Alle relevanten Aufgabentypen berücksichtigen
-    const progresses = [unitPropProgress, caseSplitProgress];
+    const progresses = [directInferenceProgress, caseSplitProgress];
     const typeProgresses = progresses.map(calculateTypeProgress);
     // Mittelwert berechnen
     const avgProgress = typeProgresses.reduce((a, b) => a + b, 0) / typeProgresses.length;
@@ -231,11 +231,11 @@ export default function Account() {
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <h3 className="text-2xl">Direktes Schließen</h3>
-              {unitPropProgress.isCompleted ? (
+              {directInferenceProgress.isCompleted ? (
                 <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
                   Abgeschlossen
                 </span>
-              ) : unitPropProgress.isUnlocked && (
+              ) : directInferenceProgress.isUnlocked && (
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                   Freigeschaltet
                 </span>
@@ -243,13 +243,13 @@ export default function Account() {
             </div>
             
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              {unitPropProgress.isCompleted ? (
+              {directInferenceProgress.isCompleted ? (
                 <>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">Abgeschlossene Level</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {unitPropProgress.totalLevels} / {unitPropProgress.totalLevels}
+                        {directInferenceProgress.totalLevels} / {directInferenceProgress.totalLevels}
                       </p>
                     </div>
                     <div>
@@ -273,19 +273,19 @@ export default function Account() {
                     <div>
                       <p className="text-sm text-gray-600">Aktuelles Level</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {unitPropProgress.currentLevel} / {unitPropProgress.totalLevels}
+                        {directInferenceProgress.currentLevel} / {directInferenceProgress.totalLevels}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Richtig in Folge</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {unitPropProgress.correctInRow} / {unitPropProgress.requiredCorrect}
+                        {directInferenceProgress.correctInRow} / {directInferenceProgress.requiredCorrect}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Gesamtfortschritt</p>
                       <p className="text-2xl font-bold text-blue-600">
-                        {Math.round(((unitPropProgress.currentLevel - 1 + unitPropProgress.correctInRow / unitPropProgress.requiredCorrect) / unitPropProgress.totalLevels) * 100)}%
+                        {Math.round(((directInferenceProgress.currentLevel - 1 + directInferenceProgress.correctInRow / directInferenceProgress.requiredCorrect) / directInferenceProgress.totalLevels) * 100)}%
                       </p>
                     </div>
                   </div>
@@ -293,7 +293,7 @@ export default function Account() {
                   <div className="h-4 bg-gray-300 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-blue-600 transition-all duration-500"
-                      style={{ width: `${((unitPropProgress.currentLevel - 1 + unitPropProgress.correctInRow / unitPropProgress.requiredCorrect) / unitPropProgress.totalLevels) * 100}%` }}
+                      style={{ width: `${((directInferenceProgress.currentLevel - 1 + directInferenceProgress.correctInRow / directInferenceProgress.requiredCorrect) / directInferenceProgress.totalLevels) * 100}%` }}
                     />
                   </div>
                 </>
