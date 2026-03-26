@@ -42,7 +42,6 @@ def main():
         levels = get_levels_for_task_type(task_type)
         level = random.choice(levels)
 
-        task_type = TaskType.CASE_SPLIT
 
         generator = TaskGenerator(DIFFICULTY_CONFIG) 
         task = generator.generate_task(task_type, level)    # Je nach Aufgabentyp und Level kann die Generierung etwas länger dauern

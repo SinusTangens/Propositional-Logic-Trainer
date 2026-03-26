@@ -286,10 +286,13 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
     """
 
 
+
     # Keine konstanten Prämissen
     for prem in premises:
         if len(prem.free_symbols) == 0:
             return False
+
+
 
     # Jede Variable muss in mindestens einer der Prämissen vorkommen
     all_syms = set()
@@ -325,6 +328,13 @@ def is_good_task_type_direct_inference(premises: List[Boolean], vars, level) -> 
         if len(local_closure) >= 3:
             return False
 
+
+    # Verhindere Aufgaben, bei denen ein Literal direkt als Teil einer Konjunktion auf oberster Ebene steht (z.B. A ∧ (B ⊕ C))
+    for prem in premises:
+        if isinstance(prem, And):
+            for arg in prem.args:
+                if isinstance(arg, Symbol) or (isinstance(arg, Not) and isinstance(arg.args[0], Symbol)):
+                    return False
 
 
     # Ab Level 3 soll eine Prämisse nicht nur noch aus einer Variable bestehen drürfen (sonst zu trivial)
