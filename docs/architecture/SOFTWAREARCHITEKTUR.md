@@ -600,7 +600,7 @@ Im Development-Modus (Vite auf Port 5173, Django auf 8000) ist CORS konfiguriert
 | | `/api/auth/me/` | GET | Aktueller User mit Fortschritt |
 | | `/api/auth/password-change/` | POST | Passwort ändern |
 | | `/api/auth/reset-progress/` | POST | Lernfortschritt zurücksetzen |
-| | `/api/auth/avatar/` | PUT | Avatar-Einstellungen speichern |
+| | `/api/auth/avatar/` | POST | Avatar-Einstellungen speichern |
 | | `/api/auth/avatar/random/` | POST | Zufälligen Avatar generieren |
 | **Users** | `/api/users/` | GET | Benutzerliste (Admin) |
 | | `/api/users/{id}/` | GET | Benutzerdetails (Admin) |

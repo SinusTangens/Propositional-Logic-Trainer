@@ -340,6 +340,7 @@ prop-logic-trainer/
 │   └── feedback/                  # Feedback-Engine API (für spätere Feedbackmechanismen)
 │
 ├── core/                          # Business Logic (Non-Django)
+│   ├── evaluation/                # Evaluierung der Aufgabengenerierung und des Solvers
 │   ├── logic_engine/
 │   │   ├── solver/               # Bucket Elimination Solver
 │   │   └── feedback/             # FeedbackEngine

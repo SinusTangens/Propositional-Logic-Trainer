@@ -6,6 +6,8 @@ django-cors-headers>=4.3.0
 # Data & Science
 sympy>=1.12
 numpy>=1.26.4
+pandas>=3.0.1
+
 
 # Environment & Config
 python-dotenv>=1.0.0
