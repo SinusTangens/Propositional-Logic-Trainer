@@ -28,11 +28,12 @@ def random_formula(vars, max_depth: int, allowed_ops: Sequence[str], op_weights:
     """
     Erzeugt rekursiv eine zufällige SymPy-Formel über 'vars',
     unter Verwendung der erlaubten Operatoren und der übergebenen Gewichte.
+
     """
 
-    should_stop_early = (random.random() < 0.2) 
     
-    if max_depth == 0 or (max_depth > 0 and should_stop_early):
+    
+    if max_depth == 0:
         v = random.choice(vars)
         return v if random.random() < 0.5 else Not(v)
 
