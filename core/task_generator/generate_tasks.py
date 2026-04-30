@@ -495,7 +495,7 @@ class TaskGenerator:
         vars = (vars_tuple,) if num_vars == 1 else vars_tuple   # SymPy gibt bei nur 1 Variable kein Tupel zurück
 
         # Erzeugungsloop, bis passende Aufgabe gefunden wurde
-        # Anzahl an Iterationen frei gewählt
+        # Anzahl an Iterationen an die maximale Akzeptanzrate angepasst 
         for _ in range(50000):
             num_premises = random.randint(*spec.num_premises_range)
             premises = [
